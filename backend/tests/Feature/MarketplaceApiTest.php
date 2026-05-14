@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -60,5 +61,63 @@ class MarketplaceApiTest extends TestCase
             ->assertCreated()
             ->assertJsonPath('data.total_amount', 500)
             ->assertJsonPath('data.status', 'pending');
+    }
+
+    public function test_authenticated_provider_can_publish_a_service_and_list_own_services(): void
+    {
+        $provider = User::query()->create([
+            'name' => 'Provider Test',
+            'email' => 'provider@example.com',
+            'password' => 'password123',
+            'role' => 'provider',
+            'city' => 'Casablanca',
+        ]);
+
+        $loginResponse = $this->postJson('/api/login', [
+            'email' => $provider->email,
+            'password' => 'password123',
+        ]);
+
+        $token = $loginResponse->json('token');
+
+        $this->withHeader('Authorization', 'Bearer '.$token)
+            ->postJson('/api/services', [
+                'service_type' => 'home_service',
+                'category' => 'Climatisation',
+                'title' => 'Installation climatiseur premium',
+                'description' => 'Pose, mise en service et verification finale.',
+                'location_city' => 'Casablanca',
+                'location_address' => 'Bourgogne, Casablanca',
+                'price' => 600,
+                'billing_unit' => 'per_service',
+                'duration_label' => 'Intervention sur rendez-vous',
+                'features' => ['Diagnostic', 'Pose', 'Garantie 30 jours'],
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.provider.id', $provider->id);
+
+        $this->withHeader('Authorization', 'Bearer '.$token)
+            ->getJson('/api/my/services')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.title', 'Installation climatiseur premium');
+    }
+
+    public function test_authenticated_provider_only_sees_its_own_bookings_in_management_view(): void
+    {
+        $this->seed();
+
+        $loginResponse = $this->postJson('/api/login', [
+            'email' => 'salma.services@khadamat.ma',
+            'password' => 'password',
+        ]);
+
+        $token = $loginResponse->json('token');
+
+        $this->withHeader('Authorization', 'Bearer '.$token)
+            ->getJson('/api/bookings')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.provider.name', 'Salma Home Services');
     }
 }

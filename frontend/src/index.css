@@ -1,18 +1,19 @@
 :root {
-  font-family: 'Gill Sans', 'Trebuchet MS', sans-serif;
+  font-family: 'Aptos', 'Trebuchet MS', 'Segoe UI', sans-serif;
   line-height: 1.5;
   font-weight: 400;
   color: #445250;
   background:
-    linear-gradient(180deg, #f4ecdf 0%, #efe7da 42%, #f8f5ef 100%);
+    radial-gradient(circle at top left, rgba(255, 193, 122, 0.22), transparent 28%),
+    radial-gradient(circle at right center, rgba(42, 122, 117, 0.16), transparent 32%),
+    linear-gradient(180deg, #f7f4ec 0%, #eef3f1 100%);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  --color-heading: #16312f;
+  --color-heading: #10292c;
   --color-copy: #445250;
-  --color-muted: #6e7b79;
-  --color-accent-dark: #234845;
+  --color-muted: #6a7775;
 }
 
 * {
@@ -28,18 +29,10 @@ body {
   min-width: 320px;
   min-height: 100vh;
   color: var(--color-copy);
-}
-
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
-  background-size: 32px 32px;
-  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.35), transparent 85%);
+  background:
+    radial-gradient(circle at top left, rgba(255, 193, 122, 0.22), transparent 28%),
+    radial-gradient(circle at right center, rgba(42, 122, 117, 0.16), transparent 32%),
+    linear-gradient(180deg, #f7f4ec 0%, #eef3f1 100%);
 }
 
 a {
@@ -50,22 +43,17 @@ h1,
 h2,
 h3 {
   margin: 0;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: 'Cambria', 'Times New Roman', serif;
   line-height: 1.04;
   color: var(--color-heading);
 }
 
-h1 {
-  font-size: clamp(3.2rem, 6vw, 5.8rem);
-}
-
 h2 {
-  font-size: clamp(1.8rem, 3vw, 2.6rem);
-  margin-top: 8px;
+  font-size: clamp(1.9rem, 3vw, 2.8rem);
 }
 
 h3 {
-  font-size: 1.25rem;
+  font-size: 1.2rem;
 }
 
 p {

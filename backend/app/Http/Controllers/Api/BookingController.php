@@ -15,6 +15,14 @@ class BookingController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
+        $user = $request->user();
+
+        if (! $user || ! in_array($user->role, ['provider', 'admin'], true)) {
+            return response()->json([
+                'message' => 'Action reservee aux prestataires et administrateurs.',
+            ], 403);
+        }
+
         $bookings = Booking::query()
             ->with([
                 'service:id,title,service_type,location_city,price,billing_unit',
@@ -22,9 +30,29 @@ class BookingController extends Controller
                 'provider:id,name,phone,city',
             ])
             ->when(
+                $user->role === 'provider',
+                fn ($query) => $query->where('provider_id', $user->id),
+            )
+            ->when(
                 $request->string('status')->toString(),
                 fn ($query, string $status) => $query->where('status', $status),
             )
+            ->latest()
+            ->get();
+
+        return response()->json([
+            'data' => $bookings->map(fn (Booking $booking) => $this->transformBooking($booking))->values(),
+        ]);
+    }
+
+    public function mine(Request $request): JsonResponse
+    {
+        $bookings = Booking::query()
+            ->with([
+                'service:id,title,service_type,location_city,price,billing_unit',
+                'provider:id,name,phone,city',
+            ])
+            ->where('client_id', $request->user()->id)
             ->latest()
             ->get();
 

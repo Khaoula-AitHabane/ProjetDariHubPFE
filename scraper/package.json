@@ -1,0 +1,19 @@
+{
+  "name": "darsouk-scraper",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Scraper Playwright qui recupere de vraies annonces marocaines (Avito.ma, Mubawab) et produit un JSON consommable par l API Laravel.",
+  "type": "module",
+  "scripts": {
+    "install:browsers": "playwright install chromium",
+    "scrape": "node scrape.js",
+    "scrape:avito": "node scrape.js --source=avito",
+    "scrape:mubawab": "node scrape.js --source=mubawab",
+    "scrape:http": "node scrape-http.js",
+    "scrape:http:all": "node scrape-http.js --source=all"
+  },
+  "dependencies": {
+    "cheerio": "^1.2.0",
+    "playwright": "^1.47.0"
+  }
+}
