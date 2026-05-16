@@ -1,28 +1,27 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Heart, MapPin, Star, Search, SlidersHorizontal, X, Phone, Shield, Sparkles, ThumbsUp, Lock } from 'lucide-react'
+import { Heart, MapPin, Star, Search, SlidersHorizontal, X, Phone, Shield, Sparkles, ThumbsUp, Lock, Armchair } from 'lucide-react'
 import { useMarketplace } from '../context/MarketplaceContext'
 import { formatPrice } from '../lib/marketplace'
 
-/* ─────────── Service subcategories ─────────── */
-const SERVICE_CATS = [
-  { id: 'all', label: 'Tous les services' },
-  { id: 'electricite', label: 'Électricité' },
-  { id: 'plomberie', label: 'Plomberie' },
-  { id: 'nettoyage', label: 'Nettoyage' },
-  { id: 'jardinage', label: 'Jardinage' },
-  { id: 'peinture', label: 'Peinture' },
-  { id: 'climatisation', label: 'Climatisation' },
-  { id: 'demenagement', label: 'Déménagement' },
+/* ─────────── Furniture subcategories ─────────── */
+const FURNITURE_CATS = [
+  { id: 'all', label: 'Tous les meubles' },
+  { id: 'salon', label: 'Salons' },
+  { id: 'chambre', label: 'Chambres' },
+  { id: 'electromenager', label: 'Électroménager' },
+  { id: 'decoration', label: 'Décoration' },
+  { id: 'tables', label: 'Tables & Chaises' },
+  { id: 'cuisine', label: 'Cuisine' },
   { id: 'autre', label: 'Autre' },
 ]
 
 /* ─────────── Trust Badges ─────────── */
 const TRUST_ITEMS = [
-  { icon: <Shield size={28} />, title: 'Annonces vérifiées', desc: 'Des annonces fiables et vérifiées par notre système IA' },
-  { icon: <Sparkles size={28} />, title: 'Recherche intelligente', desc: 'Trouvez exactement ce que vous cherchez grâce à l\'IA' },
-  { icon: <ThumbsUp size={28} />, title: 'Recommandations', desc: 'Des suggestions personnalisées rien que pour vous' },
-  { icon: <Lock size={28} />, title: 'Paiement sécurisé', desc: 'Vos transactions sont protérisées et sécurisées' },
+  { icon: <Shield size={28} />, title: 'Qualité vérifiée', desc: 'Des meubles inspectés et validés par notre communauté' },
+  { icon: <Sparkles size={28} />, title: 'Prix imbattables', desc: 'Trouvez les meilleures opportunités neuf ou occasion' },
+  { icon: <ThumbsUp size={28} />, title: 'Recommandations', desc: 'Des suggestions personnalisées pour votre intérieur' },
+  { icon: <Lock size={28} />, title: 'Transaction sécurisée', desc: 'Vos échanges sont protégés et sécurisés' },
 ]
 
 /* ─────────── Star Rating Component ─────────── */
@@ -44,12 +43,12 @@ function StarRating({ rating = 0, count = 0 }) {
   )
 }
 
-/* ─────────── Service Card ─────────── */
-function ServiceListingCard({ service, isFavorite, onToggleFavorite, currentUser, getWhatsAppLink }) {
+/* ─────────── Furniture Card ─────────── */
+function FurnitureListingCard({ furniture, isFavorite, onToggleFavorite, currentUser, getWhatsAppLink }) {
   const navigate = useNavigate()
-  const rating = Number(service.rating ?? 4.0).toFixed(1)
-  const reviewsCount = service.reviews_count ?? Math.floor(Math.random() * 60 + 10)
-  const wa = getWhatsAppLink(service)
+  const rating = Number(furniture.rating ?? 4.0).toFixed(1)
+  const reviewsCount = furniture.reviews_count ?? Math.floor(Math.random() * 40 + 5)
+  const wa = getWhatsAppLink(furniture)
 
   function handleWA(e) {
     if (!currentUser) {
@@ -58,8 +57,8 @@ function ServiceListingCard({ service, isFavorite, onToggleFavorite, currentUser
     }
   }
 
-  const imageFallback = `https://picsum.photos/seed/${service.id ?? service.title}/400/300`
-  const imgSrc = service.image_url || imageFallback
+  const imageFallback = `https://picsum.photos/seed/${furniture.id ?? furniture.title}/400/300`
+  const imgSrc = furniture.image_url || imageFallback
 
   return (
     <article className="svc-card">
@@ -67,16 +66,16 @@ function ServiceListingCard({ service, isFavorite, onToggleFavorite, currentUser
       <div className="svc-card-img-wrap">
         <img
           src={imgSrc}
-          alt={service.title}
+          alt={furniture.title}
           className="svc-card-img"
           loading="lazy"
           onError={(e) => { e.target.src = imageFallback }}
         />
-        <span className="svc-card-badge">Services</span>
+        <span className="svc-card-badge" style={{ backgroundColor: '#f97316' }}>Meubles</span>
         <button
           type="button"
           className={`svc-fav-btn${isFavorite ? ' active' : ''}`}
-          onClick={() => currentUser ? onToggleFavorite(service.id) : navigate('/login')}
+          onClick={() => currentUser ? onToggleFavorite(furniture.id) : navigate('/login')}
           aria-label="Favoris"
         >
           <Heart size={16} fill={isFavorite ? 'currentColor' : 'none'} strokeWidth={2} />
@@ -85,18 +84,18 @@ function ServiceListingCard({ service, isFavorite, onToggleFavorite, currentUser
 
       {/* Body */}
       <div className="svc-card-body">
-        <h3 className="svc-card-title">{service.title}</h3>
+        <h3 className="svc-card-title">{furniture.title}</h3>
 
         <div className="svc-card-meta">
           <span className="svc-card-city">
-            <MapPin size={13} /> {service.location_city ?? 'Maroc'}
+            <MapPin size={13} /> {furniture.location_city ?? 'Maroc'}
           </span>
           <StarRating rating={rating} count={reviewsCount} />
         </div>
 
         <div className="svc-card-footer">
           <div className="svc-card-price">
-            À partir de <strong>{formatPrice(service.price ?? 0)}</strong>
+            <strong>{formatPrice(furniture.price ?? 0)}</strong>
           </div>
           <button
             type="button"
@@ -113,11 +112,9 @@ function ServiceListingCard({ service, isFavorite, onToggleFavorite, currentUser
           target={currentUser ? '_blank' : '_self'}
           rel="noreferrer"
           onClick={handleWA}
+          style={{ background: '#0b162c' }}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-          </svg>
-          Contacter (WA) {service.provider?.phone ?? '+212 6 00 00 00 00'}
+          <Phone size={16} /> Contacter le vendeur
         </a>
       </div>
     </article>
@@ -125,8 +122,7 @@ function ServiceListingCard({ service, isFavorite, onToggleFavorite, currentUser
 }
 
 /* ─────────── Main Page ─────────── */
-export default function ServicesPage() {
-  const navigate = useNavigate()
+export default function FurniturePage() {
   const {
     loading,
     apiError,
@@ -143,23 +139,31 @@ export default function ServicesPage() {
   const [priceMin, setPriceMin] = useState('')
   const [priceMax, setPriceMax] = useState('')
   const [activeCat, setActiveCat] = useState('all')
+  const [condition, setCondition] = useState('all')
   const [filtersOpen, setFiltersOpen] = useState(false)
 
-  // Filter only home_service listings
-  const homeServices = useMemo(() => {
-    return allServices.filter(s => s.service_type === 'home_service')
+  // Filter only furniture_rental listings
+  const furnitureItems = useMemo(() => {
+    return allServices.filter(s => s.service_type === 'furniture_rental')
   }, [allServices])
 
   const filtered = useMemo(() => {
-    return homeServices.filter((s) => {
+    return furnitureItems.filter((s) => {
       if (city !== 'all' && s.location_city !== city) return false
       const price = Number(s.price ?? 0)
       if (priceMin && price < Number(priceMin)) return false
       if (priceMax && price > Number(priceMax)) return false
+      
       if (activeCat !== 'all') {
         const hay = `${s.category ?? ''} ${s.title ?? ''} ${s.description ?? ''}`.toLowerCase()
         if (!hay.includes(activeCat)) return false
       }
+
+      if (condition !== 'all') {
+        const hay = `${s.category ?? ''} ${s.title ?? ''} ${s.description ?? ''}`.toLowerCase()
+        if (!hay.includes(condition)) return false
+      }
+
       if (search.trim()) {
         const q = search.trim().toLowerCase()
         const hay = `${s.title ?? ''} ${s.category ?? ''} ${s.description ?? ''} ${s.location_city ?? ''}`.toLowerCase()
@@ -167,30 +171,29 @@ export default function ServicesPage() {
       }
       return true
     })
-  }, [homeServices, city, priceMin, priceMax, activeCat, search])
+  }, [furnitureItems, city, priceMin, priceMax, activeCat, condition, search])
 
   function reset() {
-    setSearch(''); setCity('all'); setPriceMin(''); setPriceMax(''); setActiveCat('all')
+    setSearch(''); setCity('all'); setPriceMin(''); setPriceMax(''); setActiveCat('all'); setCondition('all')
   }
 
   return (
     <div className="svc-page">
 
       {/* ── Hero Banner ── */}
-      <section className="svc-hero">
+      <section className="svc-hero" style={{ background: 'linear-gradient(135deg, #0b162c 0%, #334155 100%)' }}>
         <div className="svc-hero-overlay" />
         <div className="svc-hero-content">
-          <p className="svc-hero-eyebrow">Trouvez ce que vous cherchez</p>
-          <h1 className="svc-hero-title">Services Maison</h1>
-          <p className="svc-hero-sub">Des milliers d'annonces, intelligentes et vérifiées</p>
-
+          <p className="svc-hero-eyebrow">Aménagez votre intérieur</p>
+          <h1 className="svc-hero-title">Meubles & Déco</h1>
+          <p className="svc-hero-sub">Trouvez les plus beaux meubles neufs et d'occasion au meilleur prix</p>
         </div>
       </section>
 
       {/* ── Category Pills ── */}
       <div className="svc-cats-bar">
         <div className="svc-cats-inner">
-          {SERVICE_CATS.map((cat) => (
+          {FURNITURE_CATS.map((cat) => (
             <button
               key={cat.id}
               type="button"
@@ -205,7 +208,7 @@ export default function ServicesPage() {
             className="svc-filter-toggle"
             onClick={() => setFiltersOpen((o) => !o)}
           >
-            <SlidersHorizontal size={16} /> Filtres avancés
+            <SlidersHorizontal size={16} /> Filtres
           </button>
         </div>
       </div>
@@ -215,6 +218,16 @@ export default function ServicesPage() {
         <div className="svc-adv-filters">
           <div className="svc-adv-filters-inner">
             <div className="svc-filter-group">
+              <label>Rechercher</label>
+              <input 
+                type="text" 
+                value={search} 
+                onChange={(e) => setSearch(e.target.value)} 
+                placeholder="Canapé, table..." 
+                className="filter-input"
+              />
+            </div>
+            <div className="svc-filter-group">
               <label>Ville</label>
               <select value={city} onChange={(e) => setCity(e.target.value)} className="filter-select">
                 <option value="all">Toutes les villes</option>
@@ -222,15 +235,19 @@ export default function ServicesPage() {
               </select>
             </div>
             <div className="svc-filter-group">
-              <label>Prix min (DH)</label>
-              <input type="number" value={priceMin} onChange={(e) => setPriceMin(e.target.value)} placeholder="0" className="filter-input" min="0" />
+              <label>État</label>
+              <select value={condition} onChange={(e) => setCondition(e.target.value)} className="filter-select">
+                <option value="all">Tous les états</option>
+                <option value="neuf">Neuf</option>
+                <option value="occasion">Occasion</option>
+              </select>
             </div>
             <div className="svc-filter-group">
               <label>Prix max (DH)</label>
               <input type="number" value={priceMax} onChange={(e) => setPriceMax(e.target.value)} placeholder="∞" className="filter-input" min="0" />
             </div>
             <button type="button" className="svc-reset-btn" onClick={reset}>
-              <X size={14} /> Réinitialiser
+              <X size={14} /> Effacer
             </button>
           </div>
         </div>
@@ -241,17 +258,11 @@ export default function ServicesPage() {
 
         {/* Results Header */}
         <div className="svc-results-header">
-          <h2 className="svc-results-title">Services Maison</h2>
+          <h2 className="svc-results-title">Annonces Meubles</h2>
           <span className="svc-results-count">
-            {loading ? 'Chargement…' : `${filtered.length} annonce(s) trouvée(s)`}
+            {loading ? 'Chargement…' : `${filtered.length} meuble(s) trouvé(s)`}
           </span>
         </div>
-
-        {apiError && (
-          <div className="svc-api-error">
-            ⚠ API indisponible. Affichage des données locales.
-          </div>
-        )}
 
         {/* Grid */}
         {loading ? (
@@ -269,11 +280,11 @@ export default function ServicesPage() {
           </div>
         ) : filtered.length > 0 ? (
           <div className="svc-grid">
-            {filtered.map((service) => (
-              <ServiceListingCard
-                key={service.id}
-                service={service}
-                isFavorite={favorites.includes(service.id)}
+            {filtered.map((item) => (
+              <FurnitureListingCard
+                key={item.id}
+                furniture={item}
+                isFavorite={favorites.includes(item.id)}
                 onToggleFavorite={toggleFavorite}
                 currentUser={currentUser}
                 getWhatsAppLink={getWhatsAppLink}
@@ -282,10 +293,10 @@ export default function ServicesPage() {
           </div>
         ) : (
           <div className="svc-empty">
-            <div className="svc-empty-icon">🔍</div>
-            <h3>Aucun service trouvé</h3>
-            <p>Essayez de modifier vos filtres ou d'élargir votre recherche.</p>
-            <button type="button" className="svc-reset-btn-lg" onClick={reset}>
+            <div className="svc-empty-icon">🛋️</div>
+            <h3>Aucun meuble trouvé</h3>
+            <p>Désolé, nous n'avons trouvé aucun meuble correspondant à vos critères.</p>
+            <button type="button" className="svc-reset-btn-lg" onClick={reset} style={{ background: '#f97316' }}>
               Réinitialiser les filtres
             </button>
           </div>
@@ -297,7 +308,7 @@ export default function ServicesPage() {
         <div className="svc-trust-inner">
           {TRUST_ITEMS.map((item, i) => (
             <div key={i} className="svc-trust-item">
-              <div className="svc-trust-icon">{item.icon}</div>
+              <div className="svc-trust-icon" style={{ background: '#fff7ed', color: '#f97316' }}>{item.icon}</div>
               <div>
                 <strong>{item.title}</strong>
                 <p>{item.desc}</p>
@@ -309,12 +320,12 @@ export default function ServicesPage() {
 
       {/* ── Link to Sites Utiles ── */}
       <section style={{ textAlign: 'center', padding: '60px 24px', background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
-        <h3 style={{ fontSize: '20px', fontWeight: '700', color: '#0b162c', marginBottom: '12px' }}>Besoin d'un coup de main ?</h3>
-        <p style={{ color: '#64748b', marginBottom: '24px' }}>Consultez nos ressources et sites partenaires pour tous vos travaux maison.</p>
+        <h3 style={{ fontSize: '20px', fontWeight: '700', color: '#0b162c', marginBottom: '12px' }}>Envie de changement ?</h3>
+        <p style={{ color: '#64748b', marginBottom: '24px' }}>Découvrez notre sélection de sites partenaires pour le mobilier et la décoration.</p>
         <button 
           onClick={() => navigate('/sites-utiles')}
           className="svc-reset-btn-lg" 
-          style={{ background: '#0b162c' }}
+          style={{ background: '#f97316' }}
         >
           Voir les sites utiles
         </button>

@@ -13,7 +13,15 @@ export default function HomePage() {
 
   const handleSearch = (e) => {
     e.preventDefault()
-    navigate(`/categories/${searchCategory === 'all' ? 'house_rental' : searchCategory}`)
+    if (searchCategory === 'furniture_rental') {
+      navigate('/meubles')
+    } else if (searchCategory === 'home_service') {
+      navigate('/services-maison')
+    } else if (searchCategory === 'house_rental' || searchCategory === 'all') {
+      navigate('/immobilier')
+    } else {
+      navigate(`/categories/${searchCategory}`)
+    }
   }
 
   return (
@@ -128,10 +136,10 @@ export default function HomePage() {
               <img src="https://images.unsplash.com/photo-1460317442991-0ec209397118?auto=format&fit=crop&q=80&w=600" alt="Immobilier" />
             </div>
             <ul className="category-list">
-              <li><Link to="/categories/house_rental"><Home size={18} className="list-icon" /> Location <ChevronRight size={18} className="chevron" /></Link></li>
-              <li><Link to="/categories/house_rental"><Building size={18} className="list-icon" /> Vente <ChevronRight size={18} className="chevron" /></Link></li>
-              <li><Link to="/categories/house_rental"><Building size={18} className="list-icon" /> Appartements <ChevronRight size={18} className="chevron" /></Link></li>
-              <li><Link to="/categories/house_rental"><Home size={18} className="list-icon" /> Villas <ChevronRight size={18} className="chevron" /></Link></li>
+              <li><Link to="/immobilier"><Home size={18} className="list-icon" /> Location <ChevronRight size={18} className="chevron" /></Link></li>
+              <li><Link to="/immobilier"><Building size={18} className="list-icon" /> Vente <ChevronRight size={18} className="chevron" /></Link></li>
+              <li><Link to="/immobilier"><Building size={18} className="list-icon" /> Appartements <ChevronRight size={18} className="chevron" /></Link></li>
+              <li><Link to="/immobilier"><Home size={18} className="list-icon" /> Villas <ChevronRight size={18} className="chevron" /></Link></li>
             </ul>
           </div>
 
@@ -145,10 +153,10 @@ export default function HomePage() {
               <img src="https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&q=80&w=600" alt="Meubles" />
             </div>
             <ul className="category-list">
-              <li><Link to="/categories/furniture_rental"><Armchair size={18} className="list-icon" /> Neuf <ChevronRight size={18} className="chevron" /></Link></li>
-              <li><Link to="/categories/furniture_rental"><Armchair size={18} className="list-icon" /> Occasion <ChevronRight size={18} className="chevron" /></Link></li>
-              <li><Link to="/categories/furniture_rental"><Armchair size={18} className="list-icon" /> Canapés <ChevronRight size={18} className="chevron" /></Link></li>
-              <li><Link to="/categories/furniture_rental"><Armchair size={18} className="list-icon" /> Tables <ChevronRight size={18} className="chevron" /></Link></li>
+              <li><Link to="/meubles"><Armchair size={18} className="list-icon" /> Neuf <ChevronRight size={18} className="chevron" /></Link></li>
+              <li><Link to="/meubles"><Armchair size={18} className="list-icon" /> Occasion <ChevronRight size={18} className="chevron" /></Link></li>
+              <li><Link to="/meubles"><Armchair size={18} className="list-icon" /> Canapés <ChevronRight size={18} className="chevron" /></Link></li>
+              <li><Link to="/meubles"><Armchair size={18} className="list-icon" /> Tables <ChevronRight size={18} className="chevron" /></Link></li>
             </ul>
           </div>
 
@@ -179,81 +187,37 @@ export default function HomePage() {
         </div>
         
         <div className="latest-grid">
-          {/* Ad 1 */}
-          <div className="ad-card">
-            <div className="ad-image">
-              <img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=600" alt="Appartement meublé" />
-              <span className="ad-badge badge-rent">À Louer</span>
+          {services.slice(0, 5).map((service) => (
+            <div key={service.id} className="ad-card" onClick={() => navigate(`/categories/${service.service_type}`)} style={{ cursor: 'pointer' }}>
+              <div className="ad-image">
+                <img src={service.image_url || `https://picsum.photos/seed/${service.id}/600/400`} alt={service.title} />
+                <span className={`ad-badge ${
+                  service.service_type === 'house_rental' ? 'badge-rent' : 
+                  service.service_type === 'furniture_rental' ? 'badge-new' : 
+                  'badge-service'
+                }`}>
+                  {service.category || 'Annonce'}
+                </span>
+              </div>
+              <div className="ad-content">
+                <h4>{service.title}</h4>
+                <div className="ad-location"><MapPin size={14} /> {service.location_city}</div>
+                <div className="ad-price">
+                  {service.price ? `${Number(service.price).toLocaleString()} DH` : 'Prix sur demande'}
+                  {service.billing_unit === 'per_night' ? ' / nuit' : service.billing_unit === 'per_month' ? ' / mois' : ''}
+                </div>
+              </div>
             </div>
-            <div className="ad-content">
-              <h4>Appartement meublé</h4>
-              <div className="ad-location"><MapPin size={14} /> Casablanca</div>
-              <div className="ad-price">5 500 DH / mois</div>
+          ))}
+          {services.length === 0 && (
+            <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px', color: '#64748b' }}>
+              Aucune annonce disponible pour le moment.
             </div>
-          </div>
-
-          {/* Ad 2 */}
-          <div className="ad-card">
-            <div className="ad-image">
-              <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=600" alt="Villa moderne" />
-              <span className="ad-badge badge-sale">À Vendre</span>
-            </div>
-            <div className="ad-content">
-              <h4>Villa moderne</h4>
-              <div className="ad-location"><MapPin size={14} /> Marrakech</div>
-              <div className="ad-price">2 450 000 DH</div>
-            </div>
-          </div>
-
-          {/* Ad 3 */}
-          <div className="ad-card">
-            <div className="ad-image">
-              <img src="https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?auto=format&fit=crop&q=80&w=600" alt="Canapé d'angle" />
-              <span className="ad-badge badge-new">Neuf</span>
-            </div>
-            <div className="ad-content">
-              <h4>Canapé d'angle</h4>
-              <div className="ad-location"><MapPin size={14} /> Rabat</div>
-              <div className="ad-price">4 200 DH</div>
-            </div>
-          </div>
-
-          {/* Ad 4 */}
-          <div className="ad-card">
-            <div className="ad-image">
-              <img src="https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&q=80&w=600" alt="Installation électrique" />
-              <span className="ad-badge badge-service">Service</span>
-            </div>
-            <div className="ad-content">
-              <h4>Installation électrique</h4>
-              <div className="ad-location"><MapPin size={14} /> Casablanca</div>
-              <div className="ad-price">À partir de 250 DH</div>
-            </div>
-          </div>
-          
-          {/* Ad 5 (Nettoyage complet) as seen in mockup is actually the 4th card, but I'll stick to 4. Oh wait, the mockup has 4 cards. 
-              Let's update Ad 4 to the cleaning one or keep electrical, actually the mockup shows 4: Appartement, Villa, Canapé, and a 4th one (Installation electrique) and a 5th? Wait, looking at the image: 
-              Appartement (A Louer), Villa (A Vendre), Canapé (Neuf), Installation (Service), Nettoyage (Service). It has 5 cards? No, it's a 4 column layout and some might be scrolled or it's 5 columns. Let's make it 4 or 5 columns. 
-              Looking closely, there's 5 cards in a row? No, Appartement meuble, Villa moderne, Canapé d'angle, Installation electrique, Nettoyage complet. 
-              Actually, the image shows 4 cards visible and a piece of a 5th? No, it's perfectly 4 cards or 5 cards. Let me count:
-              1. Appartement, 2. Villa, 3. Canape, 4. Installation electrique. Wait, next to it is Nettoyage complet. So it's 5 cards.
-              Let's add the 5th one. */}
-           <div className="ad-card">
-            <div className="ad-image">
-              <img src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&q=80&w=600" alt="Nettoyage complet" />
-              <span className="ad-badge badge-service">Service</span>
-            </div>
-            <div className="ad-content">
-              <h4>Nettoyage complet</h4>
-              <div className="ad-location"><MapPin size={14} /> Tanger</div>
-              <div className="ad-price">À partir de 200 DH</div>
-            </div>
-          </div>
-
+          )}
         </div>
 
         <div className="view-more-container">
-          <Link to="/categories/house_rental" className="btn-view-more">Voir plus d'annonces</Link>
+          <Link to="/immobilier" className="btn-view-more">Voir plus d'annonces</Link>
         </div>
       </section>
 

@@ -7,12 +7,34 @@ import { formatPrice, serviceTypeMenu } from '../lib/marketplace'
 const emptyForm = {
   title: '',
   description: '',
-  serviceType: 'house_rental',
+  serviceType: '',
   category: '',
   locationCity: '',
   locationAddress: '',
   price: '',
   imageUrl: '',
+}
+
+// Sous-catégories dynamiques selon le type
+const SUBCATEGORIES = {
+  house_rental: [
+    { value: 'À louer',  label: '🔑 À louer' },
+    { value: 'À vendre', label: '🏷️ À vendre' },
+  ],
+  furniture_rental: [
+    { value: 'Meubles neufs',      label: '✨ Meubles neufs' },
+    { value: "Meubles d'occasion", label: "♻️ Meubles d'occasion" },
+  ],
+  home_service: [
+    { value: 'Électricité',   label: '⚡ Électricité' },
+    { value: 'Plomberie',     label: '🔧 Plomberie' },
+    { value: 'Nettoyage',     label: '🧹 Nettoyage' },
+    { value: 'Jardinage',     label: '🌿 Jardinage' },
+    { value: 'Peinture',      label: '🎨 Peinture' },
+    { value: 'Climatisation', label: '❄️ Climatisation' },
+    { value: 'Déménagement',  label: '📦 Déménagement' },
+    { value: 'Autre',         label: '🛠️ Autre' },
+  ],
 }
 
 export default function MyListingsPage() {
@@ -36,7 +58,12 @@ export default function MyListingsPage() {
 
   function handleChange(e) {
     const { name, value } = e.target
-    setForm((current) => ({ ...current, [name]: value }))
+    // Reset category when service type changes
+    if (name === 'serviceType') {
+      setForm((current) => ({ ...current, serviceType: value, category: '' }))
+    } else {
+      setForm((current) => ({ ...current, [name]: value }))
+    }
   }
 
   function handleImageFile(e) {
@@ -177,6 +204,8 @@ export default function MyListingsPage() {
             </div>
 
             <form className="my-listing-form" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+              {/* ── Titre + Prix ── */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                 <label style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontWeight: '500', color: '#374151' }}>
                   <span>Titre <span style={{color:'#dc2626'}}>*</span></span>
@@ -186,28 +215,6 @@ export default function MyListingsPage() {
                     value={form.title}
                     onChange={handleChange}
                     placeholder="Ex: Appartement 3 chambres à Maarif"
-                    style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid #d1d5db' }}
-                  />
-                </label>
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontWeight: '500', color: '#374151' }}>
-                  <span>Catégorie <span style={{color:'#dc2626'}}>*</span></span>
-                  <select required name="serviceType" value={form.serviceType} onChange={handleChange} style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid #d1d5db', backgroundColor: '#fff' }}>
-                    {serviceTypeMenu.map((cat) => (
-                      <option key={cat.key} value={cat.key}>{cat.label}</option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontWeight: '500', color: '#374151' }}>
-                  <span>Sous-catégorie <span style={{color:'#dc2626'}}>*</span></span>
-                  <input
-                    required
-                    name="category"
-                    value={form.category}
-                    onChange={handleChange}
-                    placeholder="Ex: Appartement, Salon, Plomberie..."
                     style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid #d1d5db' }}
                   />
                 </label>
@@ -224,6 +231,66 @@ export default function MyListingsPage() {
                   />
                 </label>
               </div>
+
+              {/* ── Catégorie → Sous-catégorie (côte à côte) ── */}
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '12px' }}>
+                {/* Catégorie principale */}
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontWeight: '500', color: '#374151', flex: 1 }}>
+                  <span>Catégorie <span style={{color:'#dc2626'}}>*</span></span>
+                  <select
+                    required
+                    name="serviceType"
+                    value={form.serviceType}
+                    onChange={handleChange}
+                    style={{ padding: '10px 16px', borderRadius: '8px', border: `1px solid ${!form.serviceType ? '#f97316' : '#d1d5db'}`, backgroundColor: '#fff', cursor: 'pointer', fontSize: '15px' }}
+                  >
+                    <option value="">-- Choisir --</option>
+                    {serviceTypeMenu.map((cat) => (
+                      <option key={cat.key} value={cat.key}>{cat.label}</option>
+                    ))}
+                  </select>
+                </label>
+
+                {/* Flèche indicateur */}
+                {SUBCATEGORIES[form.serviceType] && (
+                  <div style={{ paddingBottom: '10px', color: '#f97316', fontSize: '22px', fontWeight: '700', flexShrink: 0 }}>
+                    →
+                  </div>
+                )}
+
+                {/* Sous-catégorie — apparaît dynamiquement */}
+                {SUBCATEGORIES[form.serviceType] && (
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontWeight: '500', color: '#374151', flex: 1, animation: 'svcSlideDown 0.2s ease' }}>
+                    <span>
+                      {form.serviceType === 'house_rental' ? 'Type de bien' : form.serviceType === 'furniture_rental' ? 'État du meuble' : 'Spécialité'}
+                      {' '}<span style={{color:'#dc2626'}}>*</span>
+                    </span>
+                    <select
+                      required
+                      name="category"
+                      value={form.category}
+                      onChange={handleChange}
+                      style={{
+                        padding: '10px 16px',
+                        borderRadius: '8px',
+                        border: `2px solid ${!form.category ? '#f97316' : '#16a34a'}`,
+                        backgroundColor: !form.category ? '#fff7ed' : '#f0fdf4',
+                        cursor: 'pointer',
+                        fontSize: '15px',
+                        fontWeight: '600',
+                        color: !form.category ? '#92400e' : '#15803d',
+                        transition: 'all 0.2s',
+                      }}
+                    >
+                      <option value="">-- Choisir --</option>
+                      {SUBCATEGORIES[form.serviceType].map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+              </div>
+
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                 <label style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontWeight: '500', color: '#374151' }}>

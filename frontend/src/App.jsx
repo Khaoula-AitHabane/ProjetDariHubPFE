@@ -11,6 +11,9 @@ import MyListingsPage from './pages/MyListingsPage'
 import NotFoundPage from './pages/NotFoundPage'
 import RegisterPage from './pages/RegisterPage'
 import ServicesPage from './pages/ServicesPage'
+import FurniturePage from './pages/FurniturePage'
+import ImmobilierPage from './pages/ImmobilierPage'
+import SitesUtilesPage from './pages/SitesUtilesPage'
 
 function App() {
   return (
@@ -25,6 +28,9 @@ function App() {
             <Route path="/favoris" element={<FavoritesPage />} />
             <Route path="/mes-annonces" element={<MyListingsPage />} />
             <Route path="/services-maison" element={<ServicesPage />} />
+            <Route path="/meubles" element={<FurniturePage />} />
+            <Route path="/immobilier" element={<ImmobilierPage />} />
+            <Route path="/sites-utiles" element={<SitesUtilesPage />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>

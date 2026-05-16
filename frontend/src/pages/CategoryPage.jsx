@@ -224,6 +224,11 @@ function applyLocalFilters(services, type, filters) {
 // ── Composant principal ───────────────────────────────────────────────────
 export default function CategoryPage() {
   const { type } = useParams()
+  
+  if (type === 'house_rental') return <Navigate to="/immobilier" replace />
+  if (type === 'furniture_rental') return <Navigate to="/meubles" replace />
+  if (type === 'home_service') return <Navigate to="/services-maison" replace />
+
   const navigate = useNavigate()
   const category = serviceTypeConfig[type]
 

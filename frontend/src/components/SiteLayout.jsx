@@ -44,14 +44,17 @@ export default function SiteLayout() {
             <NavLink to="/" className={navClass}>
               <Home size={18} /> Home
             </NavLink>
-            <NavLink to="/categories/house_rental" className={navClass}>
+            <NavLink to="/immobilier" className={navClass}>
               <Building size={18} /> Immobilier
             </NavLink>
-            <NavLink to="/categories/furniture_rental" className={navClass}>
+            <NavLink to="/meubles" className={navClass}>
               <Armchair size={18} /> Meubles
             </NavLink>
             <NavLink to="/services-maison" className={navClass}>
               <Wrench size={18} /> Services Maison
+            </NavLink>
+            <NavLink to="/sites-utiles" className={navClass}>
+              <Globe size={18} /> Partenaires
             </NavLink>
             {currentUser && (
               <>
@@ -130,6 +133,16 @@ export default function SiteLayout() {
 
       <footer className="site-footer new-footer">
         <div className="footer-container">
+          <div className="footer-col footer-links">
+            <h4>Liens Utiles</h4>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <li><NavLink to="/immobilier" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Immobilier</NavLink></li>
+              <li><NavLink to="/meubles" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Meubles</NavLink></li>
+              <li><NavLink to="/services-maison" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Services Maison</NavLink></li>
+              <li><NavLink to="/sites-utiles" style={{ color: '#38bdf8', textDecoration: 'none', fontSize: '14px', fontWeight: '600' }}>Sites Partenaires</NavLink></li>
+            </ul>
+          </div>
+
           <div className="footer-col footer-contact">
             <h4>Contact</h4>
             <div className="footer-contact-items">
