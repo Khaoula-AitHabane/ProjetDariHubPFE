@@ -10,6 +10,7 @@ import LoginPage from './pages/LoginPage'
 import MyListingsPage from './pages/MyListingsPage'
 import NotFoundPage from './pages/NotFoundPage'
 import RegisterPage from './pages/RegisterPage'
+import ServicesPage from './pages/ServicesPage'
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
             <Route path="/categories/:type" element={<CategoryPage />} />
             <Route path="/favoris" element={<FavoritesPage />} />
             <Route path="/mes-annonces" element={<MyListingsPage />} />
+            <Route path="/services-maison" element={<ServicesPage />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>

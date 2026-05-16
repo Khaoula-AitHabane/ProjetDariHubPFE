@@ -1,217 +1,259 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Search, ChevronRight, Home, Armchair, Wrench, ShieldCheck, Zap, Globe, Mail, Send, Phone, MapPin } from 'lucide-react'
+import { Search, ChevronRight, MapPin, Building, Armchair, Wrench, ShieldCheck, CheckCircle, Headset, Home } from 'lucide-react'
 import { useMarketplace } from '../context/MarketplaceContext'
-import ServiceCard from '../components/ServiceCard'
 
 export default function HomePage() {
-  const { services, meta, favorites, toggleFavorite, currentUser, getWhatsAppLink, selectService } = useMarketplace()
+  const { services, meta } = useMarketplace()
   const navigate = useNavigate()
 
-  const [searchCategory, setSearchCategory] = useState('house_rental')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchCategory, setSearchCategory] = useState('all')
   const [searchCity, setSearchCity] = useState('all')
-  const [searchPrice, setSearchPrice] = useState('')
 
   const handleSearch = (e) => {
     e.preventDefault()
-    // Redirect to the selected category page, and we could pass state. For simplicity, just navigate.
-    navigate(`/categories/${searchCategory}`)
+    navigate(`/categories/${searchCategory === 'all' ? 'house_rental' : searchCategory}`)
   }
 
-  // Get some "popular" listings (top 4 featured or latest)
-  const popularListings = services
-    .sort((a, b) => (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0))
-    .slice(0, 4)
-
   return (
-    <div className="home-page-premium">
+    <div className="home-page-redesign">
       
       {/* ===== HERO SECTION ===== */}
-      <section 
-        className="hero-full"
-        style={{
-          backgroundImage: 'url("https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=2000")'
-        }}
-      >
-        <div className="hero-overlay"></div>
-        <div className="hero-content">
-          <h1 className="hero-title-main">
-            Trouvez votre maison, vos meubles et vos services en un seul endroit
-          </h1>
-          <p className="hero-subtitle">
-            La première plateforme marocaine 100% dédiée à l'habitat. Plus de {services.length > 0 ? services.length : '5000'} annonces vérifiées partout au Maroc.
-          </p>
+      <section className="hero-split">
+        <div className="hero-split-left">
+          <div className="hero-content-wrapper">
+            <div className="hero-logo-large">
+              <div className="hero-logo-icons">
+                <Home size={40} className="icon-red" fill="currentColor" />
+                <Armchair size={48} className="icon-orange" fill="currentColor" />
+                <span className="icon-leaf">🌿</span>
+              </div>
+              <h1 className="hero-logo-text">
+                <span className="text-orange">Dari</span><span className="text-blue">Hub</span>
+              </h1>
+              <div className="hero-logo-subtitle">
+                <div className="line"></div>
+                <span>Plateforme d'Annonces Marocaines</span>
+                <div className="line"></div>
+              </div>
+            </div>
 
-          <form className="hero-search-bar" onSubmit={handleSearch}>
-            <select 
-              className="hero-search-select" 
-              value={searchCategory}
-              onChange={(e) => setSearchCategory(e.target.value)}
-              style={{ borderLeft: 'none' }}
-            >
-              <option value="house_rental">Immobilier</option>
-              <option value="furniture_rental">Meubles</option>
-              <option value="home_service">Services Maison</option>
-            </select>
+            <h2 className="hero-main-title">Votre maison, notre priorité</h2>
             
-            <select 
-              className="hero-search-select"
-              value={searchCity}
-              onChange={(e) => setSearchCity(e.target.value)}
-            >
-              <option value="all">Toutes les villes</option>
-              {meta.cities.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-            
-            <input 
-              type="number" 
-              className="hero-search-input" 
-              placeholder="Budget Max (MAD)" 
-              value={searchPrice}
-              onChange={(e) => setSearchPrice(e.target.value)}
-            />
-            
-            <button type="submit" className="hero-search-btn">
-              <Search size={20} strokeWidth={2.5} /> Rechercher
-            </button>
+            <p className="hero-main-desc">
+              DariHub est une plateforme marocaine qui regroupe
+              l'immobilier, les meubles et les services maison.
+              Notre objectif est de simplifier votre quotidien en vous
+              offrant des solutions complètes, fiables et accessibles.
+              Trouvez, achetez, vendez ou réservez en toute confiance.
+            </p>
+
+            <div className="hero-features">
+              <div className="feature-item">
+                <ShieldCheck size={28} className="feature-icon" />
+                <div className="feature-text">
+                  <strong>Fiable</strong>
+                  <span>et sécurisé</span>
+                </div>
+              </div>
+              <div className="feature-item">
+                <CheckCircle size={28} className="feature-icon" />
+                <div className="feature-text">
+                  <strong>Qualité</strong>
+                  <span>garantie</span>
+                </div>
+              </div>
+              <div className="feature-item">
+                <Headset size={28} className="feature-icon" />
+                <div className="feature-text">
+                  <strong>Support</strong>
+                  <span>24/7</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="hero-split-right" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=2000")' }}>
+          {/* Background image of the modern villa */}
+        </div>
+
+        {/* Floating Search Bar */}
+        <div className="hero-search-floating">
+          <form className="hero-search-form" onSubmit={handleSearch}>
+            <div className="search-input-group">
+              <input 
+                type="text" 
+                placeholder="Que recherchez-vous ?" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <Search size={20} className="input-icon" />
+            </div>
+            <div className="divider"></div>
+            <div className="search-select-group">
+              <select value={searchCategory} onChange={(e) => setSearchCategory(e.target.value)}>
+                <option value="all">Toutes les catégories</option>
+                <option value="house_rental">Immobilier</option>
+                <option value="furniture_rental">Meubles</option>
+                <option value="home_service">Services Maison</option>
+              </select>
+            </div>
+            <div className="divider"></div>
+            <div className="search-select-group">
+              <select value={searchCity} onChange={(e) => setSearchCity(e.target.value)}>
+                <option value="all">Localisation</option>
+                {meta.cities.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+              <MapPin size={20} className="input-icon-right" />
+            </div>
+            <button type="submit" className="btn-search-primary">Rechercher</button>
           </form>
         </div>
       </section>
 
-      {/* ===== STATS SECTION ===== */}
-      <div className="home-stats-wrapper">
-        <div className="home-stats">
-          <div className="stat-box">
-            <strong>5000+</strong>
-            <span>Annonces</span>
+      {/* ===== NOS CATEGORIES ===== */}
+      <section className="section-categories">
+        <h3 className="section-title">Nos Catégories</h3>
+        
+        <div className="categories-grid">
+          {/* Card 1: Immobilier */}
+          <div className="category-card category-blue">
+            <div className="category-header">
+              <Building size={24} className="cat-icon" />
+              <h4>IMMOBILIER</h4>
+            </div>
+            <div className="category-image">
+              <img src="https://images.unsplash.com/photo-1460317442991-0ec209397118?auto=format&fit=crop&q=80&w=600" alt="Immobilier" />
+            </div>
+            <ul className="category-list">
+              <li><Link to="/categories/house_rental"><Home size={18} className="list-icon" /> Location <ChevronRight size={18} className="chevron" /></Link></li>
+              <li><Link to="/categories/house_rental"><Building size={18} className="list-icon" /> Vente <ChevronRight size={18} className="chevron" /></Link></li>
+              <li><Link to="/categories/house_rental"><Building size={18} className="list-icon" /> Appartements <ChevronRight size={18} className="chevron" /></Link></li>
+              <li><Link to="/categories/house_rental"><Home size={18} className="list-icon" /> Villas <ChevronRight size={18} className="chevron" /></Link></li>
+            </ul>
           </div>
-          <div className="stat-box">
-            <strong>1200+</strong>
-            <span>Utilisateurs</span>
+
+          {/* Card 2: Meubles */}
+          <div className="category-card category-orange">
+            <div className="category-header">
+              <Armchair size={24} className="cat-icon" />
+              <h4>MEUBLES</h4>
+            </div>
+            <div className="category-image">
+              <img src="https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&q=80&w=600" alt="Meubles" />
+            </div>
+            <ul className="category-list">
+              <li><Link to="/categories/furniture_rental"><Armchair size={18} className="list-icon" /> Neuf <ChevronRight size={18} className="chevron" /></Link></li>
+              <li><Link to="/categories/furniture_rental"><Armchair size={18} className="list-icon" /> Occasion <ChevronRight size={18} className="chevron" /></Link></li>
+              <li><Link to="/categories/furniture_rental"><Armchair size={18} className="list-icon" /> Canapés <ChevronRight size={18} className="chevron" /></Link></li>
+              <li><Link to="/categories/furniture_rental"><Armchair size={18} className="list-icon" /> Tables <ChevronRight size={18} className="chevron" /></Link></li>
+            </ul>
           </div>
-          <div className="stat-box">
-            <strong>300+</strong>
-            <span>Services</span>
-          </div>
-          <div className="stat-box">
-            <strong>50+</strong>
-            <span>Villes couvertes</span>
+
+          {/* Card 3: Services Maison */}
+          <div className="category-card category-green">
+            <div className="category-header">
+              <Wrench size={24} className="cat-icon" />
+              <h4>SERVICES MAISON</h4>
+            </div>
+            <div className="category-image">
+              <img src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&q=80&w=600" alt="Services" />
+            </div>
+            <ul className="category-list">
+              <li><Link to="/categories/home_service"><Wrench size={18} className="list-icon" /> Électricité <ChevronRight size={18} className="chevron" /></Link></li>
+              <li><Link to="/categories/home_service"><Wrench size={18} className="list-icon" /> Plomberie <ChevronRight size={18} className="chevron" /></Link></li>
+              <li><Link to="/categories/home_service"><Wrench size={18} className="list-icon" /> Nettoyage <ChevronRight size={18} className="chevron" /></Link></li>
+              <li><Link to="/categories/home_service"><Wrench size={18} className="list-icon" /> Réparation <ChevronRight size={18} className="chevron" /></Link></li>
+            </ul>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* ===== CATEGORIES ===== */}
-      <section className="home-section container-boxed">
-        <div className="section-header">
-          <h2>Explorez nos catégories</h2>
-          <p>Tout ce dont vous avez besoin pour votre habitat, réparti dans trois catégories principales pour faciliter votre recherche.</p>
+      {/* ===== DERNIERES ANNONCES ===== */}
+      <section className="section-latest">
+        <div className="section-title-wrapper">
+          <h3 className="section-title">Dernières annonces</h3>
+          <div className="title-underline"></div>
         </div>
         
-        <div className="cat-cards-grid">
-          <Link to="/categories/house_rental" className="modern-cat-card">
-            <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=800" alt="Immobilier" className="cat-bg-img" />
-            <div className="cat-card-overlay">
-              <div className="cat-card-icon"><Home size={28} color="white" /></div>
-              <h3>Immobilier</h3>
-              <p>Appartements, villas et maisons à louer ou à vendre.</p>
+        <div className="latest-grid">
+          {/* Ad 1 */}
+          <div className="ad-card">
+            <div className="ad-image">
+              <img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=600" alt="Appartement meublé" />
+              <span className="ad-badge badge-rent">À Louer</span>
             </div>
-          </Link>
-
-          <Link to="/categories/furniture_rental" className="modern-cat-card">
-            <img src="https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&q=80&w=800" alt="Meubles" className="cat-bg-img" />
-            <div className="cat-card-overlay">
-              <div className="cat-card-icon" style={{background: '#e94848'}}><Armchair size={28} color="white" /></div>
-              <h3>Meubles</h3>
-              <p>Salons marocains, chambres et électroménagers.</p>
+            <div className="ad-content">
+              <h4>Appartement meublé</h4>
+              <div className="ad-location"><MapPin size={14} /> Casablanca</div>
+              <div className="ad-price">5 500 DH / mois</div>
             </div>
-          </Link>
+          </div>
 
-          <Link to="/categories/home_service" className="modern-cat-card">
-            <img src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&q=80&w=800" alt="Services" className="cat-bg-img" />
-            <div className="cat-card-overlay">
-              <div className="cat-card-icon" style={{background: '#16a864'}}><Wrench size={28} color="white" /></div>
-              <h3>Services Maison</h3>
-              <p>Ménage, plomberie, électricité et jardinage.</p>
+          {/* Ad 2 */}
+          <div className="ad-card">
+            <div className="ad-image">
+              <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=600" alt="Villa moderne" />
+              <span className="ad-badge badge-sale">À Vendre</span>
             </div>
-          </Link>
-        </div>
-      </section>
-
-
-
-      {/* ===== WHY CHOOSE US ===== */}
-      <section className="home-section container-boxed">
-        <div className="section-header">
-          <h2>Pourquoi choisir DariHub ?</h2>
-          <p>Nous simplifions votre quotidien avec une plateforme sécurisée et facile à utiliser.</p>
-        </div>
-
-        <div className="features-grid">
-          <div className="feature-box">
-            <div className="feature-icon-wrap"><Zap size={32} /></div>
-            <h3>Rapide</h3>
-            <p>Trouvez ce que vous cherchez en quelques clics grâce à notre moteur de recherche avancé.</p>
+            <div className="ad-content">
+              <h4>Villa moderne</h4>
+              <div className="ad-location"><MapPin size={14} /> Marrakech</div>
+              <div className="ad-price">2 450 000 DH</div>
+            </div>
           </div>
-          <div className="feature-box">
-            <div className="feature-icon-wrap"><ShieldCheck size={32} /></div>
-            <h3>Sécurisé</h3>
-            <p>Des annonces modérées et des profils vérifiés pour une confiance totale.</p>
-          </div>
-          <div className="feature-box">
-            <div className="feature-icon-wrap"><Search size={32} /></div>
-            <h3>Simple</h3>
-            <p>Une interface claire et intuitive pensée pour tous les utilisateurs.</p>
-          </div>
-          <div className="feature-box">
-            <div className="feature-icon-wrap"><Globe size={32} /></div>
-            <h3>Partout au Maroc</h3>
-            <p>De Tanger à Lagouira, trouvez des services dans plus de 50 villes marocaines.</p>
-          </div>
-        </div>
-      </section>
 
+          {/* Ad 3 */}
+          <div className="ad-card">
+            <div className="ad-image">
+              <img src="https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?auto=format&fit=crop&q=80&w=600" alt="Canapé d'angle" />
+              <span className="ad-badge badge-new">Neuf</span>
+            </div>
+            <div className="ad-content">
+              <h4>Canapé d'angle</h4>
+              <div className="ad-location"><MapPin size={14} /> Rabat</div>
+              <div className="ad-price">4 200 DH</div>
+            </div>
+          </div>
 
-
-      {/* ===== CONTACT US ===== */}
-      <section className="app-cta-section container-boxed" id="contact">
-        <div className="app-cta-card" style={{ background: 'linear-gradient(135deg, var(--primary) 0%, #7c2d12 100%)', alignItems: 'flex-start' }}>
-          <div className="app-cta-content" style={{ flex: 1 }}>
-            <h2>Contactez-nous</h2>
-            <p>Une question, une suggestion ou besoin d'assistance ? Remplissez le formulaire et notre équipe vous répondra dans les plus brefs délais.</p>
-            
-            <div style={{ marginTop: '32px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <Mail size={24} /> <span>contact@darihub.ma</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <Phone size={24} /> <span>+212 5 22 00 00 00</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <MapPin size={24} /> <span>Centre d'innovation, Casablanca, Maroc</span>
-              </div>
+          {/* Ad 4 */}
+          <div className="ad-card">
+            <div className="ad-image">
+              <img src="https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&q=80&w=600" alt="Installation électrique" />
+              <span className="ad-badge badge-service">Service</span>
+            </div>
+            <div className="ad-content">
+              <h4>Installation électrique</h4>
+              <div className="ad-location"><MapPin size={14} /> Casablanca</div>
+              <div className="ad-price">À partir de 250 DH</div>
             </div>
           </div>
           
-          <div style={{ flex: 1, width: '100%', maxWidth: '450px', background: 'var(--surface)', padding: '32px', borderRadius: 'var(--radius-lg)', color: 'var(--text)', boxShadow: 'var(--shadow-xl)' }}>
-            <h3 style={{ marginBottom: '24px', fontSize: '24px', fontWeight: '700' }}>Envoyez-nous un message</h3>
-            <form onSubmit={(e) => { e.preventDefault(); alert('Message envoyé avec succès !'); e.target.reset(); }} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{ fontSize: '14px', fontWeight: '600' }}>Nom complet</label>
-                <input type="text" required placeholder="Votre nom" style={{ padding: '12px 16px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', width: '100%' }} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{ fontSize: '14px', fontWeight: '600' }}>Email</label>
-                <input type="email" required placeholder="votre@email.com" style={{ padding: '12px 16px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', width: '100%' }} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{ fontSize: '14px', fontWeight: '600' }}>Message</label>
-                <textarea required rows="4" placeholder="Comment pouvons-nous vous aider ?" style={{ padding: '12px 16px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', width: '100%', resize: 'none' }} />
-              </div>
-              <button type="submit" className="primary-button" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '8px' }}>
-                <Send size={18} /> Envoyer le message
-              </button>
-            </form>
+          {/* Ad 5 (Nettoyage complet) as seen in mockup is actually the 4th card, but I'll stick to 4. Oh wait, the mockup has 4 cards. 
+              Let's update Ad 4 to the cleaning one or keep electrical, actually the mockup shows 4: Appartement, Villa, Canapé, and a 4th one (Installation electrique) and a 5th? Wait, looking at the image: 
+              Appartement (A Louer), Villa (A Vendre), Canapé (Neuf), Installation (Service), Nettoyage (Service). It has 5 cards? No, it's a 4 column layout and some might be scrolled or it's 5 columns. Let's make it 4 or 5 columns. 
+              Looking closely, there's 5 cards in a row? No, Appartement meuble, Villa moderne, Canapé d'angle, Installation electrique, Nettoyage complet. 
+              Actually, the image shows 4 cards visible and a piece of a 5th? No, it's perfectly 4 cards or 5 cards. Let me count:
+              1. Appartement, 2. Villa, 3. Canape, 4. Installation electrique. Wait, next to it is Nettoyage complet. So it's 5 cards.
+              Let's add the 5th one. */}
+           <div className="ad-card">
+            <div className="ad-image">
+              <img src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&q=80&w=600" alt="Nettoyage complet" />
+              <span className="ad-badge badge-service">Service</span>
+            </div>
+            <div className="ad-content">
+              <h4>Nettoyage complet</h4>
+              <div className="ad-location"><MapPin size={14} /> Tanger</div>
+              <div className="ad-price">À partir de 200 DH</div>
+            </div>
           </div>
+
+        </div>
+
+        <div className="view-more-container">
+          <Link to="/categories/house_rental" className="btn-view-more">Voir plus d'annonces</Link>
         </div>
       </section>
 
