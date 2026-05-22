@@ -1,0 +1,56 @@
+name: DariHub DevOps CI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+
+  laravel-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clone project
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.2
+
+      - name: Install Composer
+        run: |
+          composer install
+
+      - name: Copy env
+        run: |
+          cp .env.example .env
+
+      - name: Generate Laravel key
+        run: |
+          php artisan key:generate
+
+      - name: Run Laravel Tests
+        run: |
+          php artisan test
+
+  react-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clone project
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: |
+          npm install
+
+      - name: Build React App
+        run: |
+          npm run build
