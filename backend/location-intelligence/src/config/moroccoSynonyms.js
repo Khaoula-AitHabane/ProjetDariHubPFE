@@ -1,0 +1,33 @@
+export const MOROCCO_SYNONYMS = {
+  'casa': 'casablanca',
+  'casablanka': 'casablanca',
+  'rbat': 'rabat',
+  'الرباط': 'rabat',
+  'marrakch': 'marrakech',
+  'mrrakech': 'marrakech',
+  'gueliz': 'gueliz',
+  'geliz': 'gueliz',
+  'guelise': 'gueliz',
+  'agdall': 'agdal',
+  'ma3arif': 'maarif',
+  'maarf': 'maarif',
+  '7da': 'pres de',
+  'hda': 'pres de',
+  '9rib': 'pres de',
+  '9reb': 'pres de',
+  'mcdo': "mcdonald's",
+  'macdo': "mcdonald's",
+  'garecasa': 'casa voyageurs',
+  'doukala': 'doukkala',
+  'dokala': 'doukkala',
+  'bd': 'boulevard',
+}
+
+export const MOROCCO_CITY_KEYWORDS = {
+  Casablanca: ['casablanca', 'casa', 'ain diab', 'maarif', 'sidi maarouf', 'hay hassani'],
+  Rabat: ['rabat', 'rbat', 'agdal', 'hay riad', 'hassan', 'yacoub el mansour'],
+  Marrakech: ['marrakech', 'marrakch', 'gueliz', 'medina', 'hivernage', 'sidi youssef'],
+  Fes: ['fes', 'fès', 'ville nouvelle', 'agdal fes', 'batha'],
+  Tanger: ['tanger', 'tanja', 'malabata', 'iberia', 'marshan'],
+  Agadir: ['agadir', 'talborjt', 'hay mohammadi', 'founty'],
+}

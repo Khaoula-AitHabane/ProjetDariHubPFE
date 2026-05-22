@@ -15,11 +15,6 @@ export default function ServiceDetailPanel({ service }) {
     favorites,
     toggleFavorite,
     getWhatsAppLink,
-    bookingForm,
-    updateBookingField,
-    submitBooking,
-    bookingSubmitting,
-    bookingFeedback,
     getCommentsForService,
     addComment,
     deleteComment,
@@ -27,14 +22,9 @@ export default function ServiceDetailPanel({ service }) {
   const [newComment, setNewComment] = useState('')
   const navigate = useNavigate()
 
-  async function handleBookingSubmit(event) {
-    event.preventDefault()
-    await submitBooking()
-  }
-
-  function handleWhatsApp(e) {
+  function handleWhatsApp(event) {
     if (!currentUser) {
-      e.preventDefault()
+      event.preventDefault()
       navigate('/login', { state: { from: 'whatsapp' } })
     }
   }
@@ -42,16 +32,16 @@ export default function ServiceDetailPanel({ service }) {
   if (!service) {
     return (
       <aside className="card detail-panel">
-        <div className="empty-box">Choisis une annonce pour voir le détail.</div>
+        <div className="empty-box">Choisis une annonce pour voir le detail.</div>
       </aside>
     )
   }
 
   return (
     <aside className="card detail-panel">
-      <div className="section-head">
+      <div className="section-head detail-head">
         <div>
-          <p className="small-label">Détail</p>
+          <p className="small-label">Detail</p>
           <h2>{service.title}</h2>
         </div>
       </div>
@@ -77,7 +67,7 @@ export default function ServiceDetailPanel({ service }) {
           <strong>{formatPrice(service.price)}</strong>
         </div>
         <div>
-          <span>Disponibilité</span>
+          <span>Disponibilite</span>
           <strong>
             {formatDate(service.available_from)} - {formatDate(service.available_to)}
           </strong>
@@ -90,9 +80,10 @@ export default function ServiceDetailPanel({ service }) {
         ))}
       </div>
 
-      {/* ── Carte Google Maps ── */}
       <div className="detail-map-section">
-        <h4 className="detail-map-title" style={{display:'flex', alignItems:'center', gap:'6px'}}><MapPin size={16} /> Localisation</h4>
+        <h4 className="detail-map-title" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <MapPin size={16} /> Localisation
+        </h4>
         <ServiceMap service={service} />
       </div>
 
@@ -103,7 +94,17 @@ export default function ServiceDetailPanel({ service }) {
             className={favorites.includes(service.id) ? 'secondary-button' : 'primary-button'}
             onClick={() => toggleFavorite(service.id)}
           >
-            {favorites.includes(service.id) ? <><Heart size={16} fill="currentColor" style={{verticalAlign:'text-bottom', marginRight:'6px'}}/> Déjà en favori</> : <><Heart size={16} style={{verticalAlign:'text-bottom', marginRight:'6px'}}/> Mettre en favori</>}
+            {favorites.includes(service.id) ? (
+              <>
+                <Heart size={16} fill="currentColor" style={{ verticalAlign: 'text-bottom', marginRight: '6px' }} />
+                Deja en favori
+              </>
+            ) : (
+              <>
+                <Heart size={16} style={{ verticalAlign: 'text-bottom', marginRight: '6px' }} />
+                Mettre en favori
+              </>
+            )}
           </button>
         ) : null}
         {service.source_url ? (
@@ -123,95 +124,34 @@ export default function ServiceDetailPanel({ service }) {
             rel="noreferrer"
             onClick={handleWhatsApp}
           >
-            {currentUser ? 'Contacter sur WhatsApp' : <><Lock size={16} style={{verticalAlign:'text-bottom', marginRight:'6px'}}/> Se connecter pour WhatsApp</>}
+            {currentUser ? (
+              'Contacter sur WhatsApp'
+            ) : (
+              <>
+                <Lock size={16} style={{ verticalAlign: 'text-bottom', marginRight: '6px' }} />
+                Se connecter pour WhatsApp
+              </>
+            )}
           </a>
         )}
       </div>
 
-      {/* Commentaires */}
       <CommentsSection
-        service={service}
         currentUser={currentUser}
         comments={getCommentsForService(service.id)}
         newComment={newComment}
         setNewComment={setNewComment}
         onAdd={() => {
-          if (addComment(service.id, newComment)) setNewComment('')
+          if (addComment(service.id, newComment)) {
+            setNewComment('')
+          }
         }}
         onDelete={(commentId) => deleteComment(service.id, commentId)}
       />
 
-      {currentUser ? (
-        <form className="booking-form" onSubmit={handleBookingSubmit}>
-          <div className="two-columns">
-            <label>
-              <span>Date début</span>
-              <input
-                required
-                type="date"
-                name="startDate"
-                value={bookingForm.startDate}
-                onChange={(event) => updateBookingField('startDate', event.target.value)}
-              />
-            </label>
-
-            <label>
-              <span>Date fin</span>
-              <input
-                type="date"
-                name="endDate"
-                value={bookingForm.endDate}
-                onChange={(event) => updateBookingField('endDate', event.target.value)}
-              />
-            </label>
-          </div>
-
-          <div className="two-columns">
-            <label>
-              <span>Quantité</span>
-              <input
-                min="1"
-                max="30"
-                type="number"
-                name="quantity"
-                value={bookingForm.quantity}
-                onChange={(event) => updateBookingField('quantity', event.target.value)}
-              />
-            </label>
-
-            <label>
-              <span>Adresse</span>
-              <input
-                name="serviceAddress"
-                value={bookingForm.serviceAddress}
-                onChange={(event) => updateBookingField('serviceAddress', event.target.value)}
-              />
-            </label>
-          </div>
-
-          <label>
-            <span>Notes</span>
-            <textarea
-              rows="3"
-              name="notes"
-              value={bookingForm.notes}
-              onChange={(event) => updateBookingField('notes', event.target.value)}
-            />
-          </label>
-
-          <button className="primary-button" type="submit" disabled={bookingSubmitting}>
-            {bookingSubmitting ? 'Réservation...' : 'Réserver ce service'}
-          </button>
-        </form>
-      ) : (
+      {!currentUser ? (
         <div className="empty-box">
-          <Link to="/login">Connecte-toi</Link> pour réserver ou contacter via WhatsApp.
-        </div>
-      )}
-
-      {bookingFeedback ? (
-        <div className={bookingFeedback.type === 'success' ? 'feedback success' : 'feedback error'}>
-          {bookingFeedback.message}
+          <Link to="/login">Connecte-toi</Link> pour contacter via WhatsApp.
         </div>
       ) : null}
     </aside>
@@ -236,16 +176,17 @@ function CommentsSection({
         <p className="comments-empty">Aucun commentaire pour cette annonce.</p>
       ) : (
         <ul className="comments-list">
-          {comments.map((c) => {
+          {comments.map((comment) => {
             const mine =
               currentUser &&
-              c.authorId === (currentUser.id ?? currentUser.email)
+              comment.authorId === (currentUser.id ?? currentUser.email)
+
             return (
-              <li key={c.id} className="comment-item">
+              <li key={comment.id} className="comment-item">
                 <div className="comment-head">
-                  <strong>{c.authorName}</strong>
+                  <strong>{comment.authorName}</strong>
                   <span className="comment-date">
-                    {new Date(c.createdAt).toLocaleDateString('fr-FR', {
+                    {new Date(comment.createdAt).toLocaleDateString('fr-FR', {
                       day: '2-digit',
                       month: 'short',
                       hour: '2-digit',
@@ -253,12 +194,12 @@ function CommentsSection({
                     })}
                   </span>
                 </div>
-                <p className="comment-body">{c.body}</p>
+                <p className="comment-body">{comment.body}</p>
                 {mine ? (
                   <button
                     type="button"
                     className="comment-delete"
-                    onClick={() => onDelete(c.id)}
+                    onClick={() => onDelete(comment.id)}
                   >
                     Supprimer
                   </button>
@@ -272,16 +213,16 @@ function CommentsSection({
       {currentUser ? (
         <form
           className="comment-form"
-          onSubmit={(e) => {
-            e.preventDefault()
+          onSubmit={(event) => {
+            event.preventDefault()
             onAdd()
           }}
         >
           <textarea
             rows="2"
-            placeholder="Écris un commentaire..."
+            placeholder="Ecris un commentaire..."
             value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
+            onChange={(event) => setNewComment(event.target.value)}
           />
           <button
             type="submit"
@@ -293,7 +234,7 @@ function CommentsSection({
         </form>
       ) : (
         <p className="comments-login">
-          <Link to="/login">Connecte-toi</Link> pour écrire un commentaire.
+          <Link to="/login">Connecte-toi</Link> pour ecrire un commentaire.
         </p>
       )}
     </div>

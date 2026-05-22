@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Service;
+use App\Support\Services\ServiceDataPresenter;
+use App\Domain\Moderation\Services\AiModerationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -71,7 +73,7 @@ class ServiceController extends Controller
         $services = $servicesQuery->get();
 
         return response()->json([
-            'data' => $services->map(fn (Service $s) => $this->transformService($s))->values(),
+            'data' => $services->map(fn (Service $s) => ServiceDataPresenter::fromModel($s))->values(),
             'meta' => [
                 'availableCities' => Service::query()
                     ->where('status', 'active')
@@ -88,7 +90,7 @@ class ServiceController extends Controller
         $service->load('provider:id,name,role,city,phone,bio');
 
         return response()->json([
-            'data' => $this->transformService($service),
+            'data' => ServiceDataPresenter::fromModel($service),
         ]);
     }
 
@@ -106,7 +108,7 @@ class ServiceController extends Controller
             ->get();
 
         return response()->json([
-            'data' => $services->map(fn (Service $s) => $this->transformService($s))->values(),
+            'data' => $services->map(fn (Service $s) => ServiceDataPresenter::fromModel($s))->values(),
         ]);
     }
 
@@ -124,19 +126,21 @@ class ServiceController extends Controller
             'description' => ['required', 'string', 'max:2000'],
             'location_city' => ['required', 'string', 'max:120'],
             'location_address' => ['nullable', 'string', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:30'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'price' => ['required', 'numeric', 'min:0'],
             'billing_unit' => ['required', Rule::in(['per_night', 'per_day', 'per_service'])],
             'capacity' => ['nullable', 'integer', 'min:1', 'max:1000'],
             'surface' => ['nullable', 'integer', 'min:1', 'max:100000'],
+            'bedrooms' => ['nullable', 'integer', 'min:0', 'max:50'],
             'furnished' => ['nullable', 'boolean'],
             'condition' => ['nullable', Rule::in(['new', 'used'])],
             'listing_kind' => ['nullable', Rule::in(['rent', 'sale'])],
             'duration_label' => ['nullable', 'string', 'max:120'],
             'features' => ['nullable', 'array', 'max:10'],
             'features.*' => ['string', 'max:60'],
-            'image_url' => ['nullable', 'url', 'max:2048'],
+            'image_url' => ['nullable', 'string', 'max:3000000'],
             'available_from' => ['nullable', 'date'],
             'available_to' => ['nullable', 'date', 'after_or_equal:available_from'],
         ]);
@@ -144,7 +148,33 @@ class ServiceController extends Controller
         // Admin publie en 'active' directement, les autres en 'pending' (validation requise).
         $status = $user->role === 'admin' ? 'active' : 'pending';
 
-        $service = Service::query()->create(array_merge($validated, [
+        // AI Moderation Analysis (if it's not an admin)
+        $aiData = [];
+        if ($user->role !== 'admin') {
+            try {
+                /** @var AiModerationService $aiService */
+                $aiService = app(AiModerationService::class);
+                $aiResult = $aiService->moderate(
+                    title:       $validated['title'],
+                    description: $validated['description'],
+                    phone:       $validated['phone'] ?? '',
+                    price:       (float) $validated['price'],
+                );
+
+                $aiData = [
+                    'ai_risk_score'     => $aiResult->confidence,
+                    'ai_risk_level'     => $aiResult->riskLevel,
+                    'ai_is_suspicious'  => $aiResult->isSuspicious,
+                    'ai_reasons'        => $aiResult->reasons,
+                    'ai_recommendation' => $aiResult->recommendation,
+                    'ai_checked'        => true,
+                ];
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('AI Moderation failed during service creation: ' . $e->getMessage());
+            }
+        }
+
+        $service = Service::query()->create(array_merge($validated, $aiData, [
             'provider_id' => $user->id,
             'status' => $status,
             'features' => $this->sanitizeFeatures($validated['features'] ?? []),
@@ -156,7 +186,7 @@ class ServiceController extends Controller
             'message' => $status === 'active'
                 ? 'Annonce publiee avec succes.'
                 : 'Annonce envoyee. En attente de validation par un administrateur.',
-            'data' => $this->transformService($service),
+            'data' => ServiceDataPresenter::fromModel($service),
         ], 201);
     }
 
@@ -176,22 +206,30 @@ class ServiceController extends Controller
             'description' => ['sometimes', 'string', 'max:2000'],
             'location_city' => ['sometimes', 'string', 'max:120'],
             'location_address' => ['nullable', 'string', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:30'],
             'latitude' => ['nullable', 'numeric'],
             'longitude' => ['nullable', 'numeric'],
             'price' => ['sometimes', 'numeric', 'min:0'],
             'surface' => ['nullable', 'integer'],
+            'bedrooms' => ['nullable', 'integer', 'min:0', 'max:50'],
             'furnished' => ['nullable', 'boolean'],
             'condition' => ['nullable', Rule::in(['new', 'used'])],
             'listing_kind' => ['nullable', Rule::in(['rent', 'sale'])],
-            'image_url' => ['nullable', 'url', 'max:2048'],
+            'image_url' => ['nullable', 'string', 'max:3000000'],
         ]);
+
+        if ($user->role !== 'admin') {
+            $validated['status'] = 'pending';
+        }
 
         $service->update($validated);
         $service->load('provider:id,name,role,city,phone,bio');
 
         return response()->json([
-            'message' => 'Annonce mise a jour.',
-            'data' => $this->transformService($service),
+            'message' => ($user->role !== 'admin')
+                ? 'Annonce mise a jour et renvoyee en validation.'
+                : 'Annonce mise a jour.',
+            'data' => ServiceDataPresenter::fromModel($service),
         ]);
     }
 
@@ -206,40 +244,6 @@ class ServiceController extends Controller
         }
         $service->delete();
         return response()->json(['message' => 'Annonce supprimee.']);
-    }
-
-    private function transformService(Service $service): array
-    {
-        return [
-            'id' => $service->id,
-            'title' => $service->title,
-            'service_type' => $service->service_type,
-            'category' => $service->category,
-            'description' => $service->description,
-            'location_city' => $service->location_city,
-            'location_address' => $service->location_address,
-            'latitude' => $service->latitude !== null ? (float) $service->latitude : null,
-            'longitude' => $service->longitude !== null ? (float) $service->longitude : null,
-            'price' => (float) $service->price,
-            'billing_unit' => $service->billing_unit,
-            'capacity' => $service->capacity,
-            'surface' => $service->surface,
-            'furnished' => $service->furnished,
-            'condition' => $service->condition,
-            'listing_kind' => $service->listing_kind,
-            'duration_label' => $service->duration_label,
-            'rating' => (float) $service->rating,
-            'reviews_count' => $service->reviews_count,
-            'status' => $service->status,
-            'is_featured' => $service->is_featured,
-            'features' => $service->features ?? [],
-            'image_url' => $service->image_url,
-            'source_url' => $service->source_url,
-            'available_from' => optional($service->available_from)->toDateString(),
-            'available_to' => optional($service->available_to)->toDateString(),
-            'provider' => $service->provider?->only(['id', 'name', 'role', 'city', 'phone', 'bio']),
-            'created_at' => $service->created_at?->toIso8601String(),
-        ];
     }
 
     /**

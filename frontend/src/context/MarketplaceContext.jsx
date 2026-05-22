@@ -41,6 +41,9 @@ export function MarketplaceProvider({ children }) {
   const [favorites, setFavorites] = useState(readStoredFavorites())
   const [comments, setComments] = useState(readStoredComments())
   const [userListings, setUserListings] = useState(readStoredUserListings())
+  const [notifications, setNotifications] = useState([])
+  const [notificationsLoading, setNotificationsLoading] = useState(false)
+  const [notificationsUnreadCount, setNotificationsUnreadCount] = useState(0)
 
   const [selectedType, setSelectedType] = useState('all')
   const [selectedCity, setSelectedCity] = useState('all')
@@ -256,16 +259,76 @@ export function MarketplaceProvider({ children }) {
   useEffect(() => {
     let cancelled = false
 
-    async function loadManagementData() {
+    async function loadMyServices() {
       if (!token || !currentUser || demoMode) {
         setManagedServices([])
-        setManagedBookings([])
-        setManagementLoading(false)
         return
       }
 
-      if (!['provider', 'admin'].includes(currentUser.role)) {
-        setManagedServices([])
+      try {
+        const response = await apiRequest('/api/my/services', { token })
+
+        if (!cancelled) {
+          setManagedServices(response.data ?? [])
+        }
+      } catch {
+        if (!cancelled) {
+          setManagedServices([])
+        }
+      }
+    }
+
+    loadMyServices()
+
+    return () => {
+      cancelled = true
+    }
+  }, [token, currentUser, demoMode])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadNotifications() {
+      if (!token || !currentUser || demoMode) {
+        setNotifications([])
+        setNotificationsUnreadCount(0)
+        setNotificationsLoading(false)
+        return
+      }
+
+      setNotificationsLoading(true)
+
+      try {
+        const response = await apiRequest('/api/notifications', { token })
+
+        if (!cancelled) {
+          setNotifications(response.data ?? [])
+          setNotificationsUnreadCount(response.meta?.unread_count ?? 0)
+        }
+      } catch {
+        if (!cancelled) {
+          setNotifications([])
+          setNotificationsUnreadCount(0)
+        }
+      } finally {
+        if (!cancelled) {
+          setNotificationsLoading(false)
+        }
+      }
+    }
+
+    loadNotifications()
+
+    return () => {
+      cancelled = true
+    }
+  }, [token, currentUser, demoMode])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadManagementBookings() {
+      if (!token || !currentUser || demoMode || !['provider', 'admin'].includes(currentUser.role)) {
         setManagedBookings([])
         setManagementLoading(false)
         return
@@ -274,20 +337,13 @@ export function MarketplaceProvider({ children }) {
       setManagementLoading(true)
 
       try {
-        const [servicesResponse, bookingsResponse] = await Promise.all([
-          apiRequest('/api/my/services', { token }),
-          apiRequest('/api/bookings', { token }),
-        ])
+        const response = await apiRequest('/api/bookings', { token })
 
-        if (cancelled) {
-          return
+        if (!cancelled) {
+          setManagedBookings(response.data ?? [])
         }
-
-        setManagedServices(sortServicesForDisplay(servicesResponse.data ?? []))
-        setManagedBookings(bookingsResponse.data ?? [])
       } catch {
         if (!cancelled) {
-          setManagedServices([])
           setManagedBookings([])
         }
       } finally {
@@ -297,15 +353,15 @@ export function MarketplaceProvider({ children }) {
       }
     }
 
-    loadManagementData()
+    loadManagementBookings()
 
     return () => {
       cancelled = true
     }
   }, [token, currentUser, demoMode])
 
-  // Fusion des annonces dataset + API + annonces locales du client (userListings)
-  const allServices = [...userListings, ...services]
+  // Les annonces publiques viennent uniquement des annonces validees chargees depuis l'API.
+  const allServices = [...services]
 
   const filteredServices = filterServices(allServices, {
     type: selectedType,
@@ -431,7 +487,7 @@ export function MarketplaceProvider({ children }) {
       })
 
       applyAuthSession(response.token, response.data, response.message)
-      return true
+      return response // Retourne tout l'objet au lieu de true
     } catch (error) {
       setAuthFeedback({
         type: 'error',
@@ -440,7 +496,7 @@ export function MarketplaceProvider({ children }) {
             ? error.message
             : 'Impossible de se connecter.',
       })
-      return false
+      return null
     } finally {
       setAuthSubmitting(false)
     }
@@ -452,7 +508,7 @@ export function MarketplaceProvider({ children }) {
         type: 'error',
         message: 'Lance l API Laravel pour utiliser register.',
       })
-      return false
+      return null
     }
 
     setAuthSubmitting(true)
@@ -473,7 +529,7 @@ export function MarketplaceProvider({ children }) {
       })
 
       applyAuthSession(response.token, response.data, response.message)
-      return true
+      return response // Retourne tout l'objet au lieu de true
     } catch (error) {
       setAuthFeedback({
         type: 'error',
@@ -482,7 +538,7 @@ export function MarketplaceProvider({ children }) {
             ? error.message
             : 'Impossible de creer le compte.',
       })
-      return false
+      return null
     } finally {
       setAuthSubmitting(false)
     }
@@ -622,25 +678,30 @@ export function MarketplaceProvider({ children }) {
       })
 
       const createdService = response.data
-      const nextServices = sortServicesForDisplay([
+      const nextManagedServices = [
         createdService,
-        ...services.filter((service) => service.id !== createdService.id),
-      ])
+        ...managedServices.filter((service) => service.id !== createdService.id),
+      ]
 
-      setServices(nextServices)
-      setMeta(buildMetaFromServices(nextServices))
-      setOverview((current) => syncOverviewSnapshot(current, nextServices))
-      setManagedServices((current) =>
-        sortServicesForDisplay([
+      setManagedServices(nextManagedServices)
+      if (createdService.status === 'active') {
+        const nextServices = sortServicesForDisplay([
           createdService,
-          ...current.filter((service) => service.id !== createdService.id),
-        ]),
-      )
+          ...services.filter((service) => service.id !== createdService.id),
+        ])
+
+        setServices(nextServices)
+        setMeta(buildMetaFromServices(nextServices))
+        setOverview((current) => syncOverviewSnapshot(current, nextServices))
+      }
       setActiveServiceId(createdService.id)
       setPublishForm(createEmptyPublishForm(currentUser))
       setPublishFeedback({
         type: 'success',
-        message: `${response.message} Elle apparait maintenant dans le catalogue.`,
+        message:
+          createdService.status === 'active'
+            ? `${response.message} Elle apparait maintenant dans le catalogue.`
+            : response.message,
       })
 
       return true
@@ -704,63 +765,157 @@ export function MarketplaceProvider({ children }) {
   }
 
   // ---------- Annonces du client (localStorage) ----------
-  function createUserListing(formValues) {
+  async function createUserListing(formValues) {
     if (!currentUser) return null
-    const listing = {
-      id: `u-${Date.now()}`,
-      service_type: formValues.serviceType ?? 'home_service',
-      category: formValues.category ?? '',
-      title: formValues.title ?? '',
-      description: formValues.description ?? '',
-      location_city: formValues.locationCity ?? currentUser.city ?? 'Maroc',
-      location_address: formValues.locationAddress ?? '',
-      price: Number(formValues.price ?? 0),
-      billing_unit:
-        formValues.billingUnit ??
-        defaultBillingUnitByType[formValues.serviceType ?? 'home_service'],
-      image_url: formValues.imageUrl ?? null,
-      is_featured: false,
-      rating: 0,
-      reviews_count: 0,
-      features: [],
-      ownerId: currentUser.id ?? currentUser.email,
-      ownerName: currentUser.name,
-      createdAt: new Date().toISOString(),
+
+    if (demoMode || !token) {
+      const listing = {
+        id: `u-${Date.now()}`,
+        service_type: formValues.serviceType ?? 'home_service',
+        category: formValues.category ?? '',
+        title: formValues.title ?? '',
+        description: formValues.description ?? '',
+        location_city: formValues.locationCity ?? currentUser.city ?? 'Maroc',
+        location_address: formValues.locationAddress ?? '',
+        latitude: formValues.latitude ? Number(formValues.latitude) : null,
+        longitude: formValues.longitude ? Number(formValues.longitude) : null,
+        phone: formValues.phone ?? currentUser.phone ?? '',
+        price: Number(formValues.price ?? 0),
+        surface: formValues.surface ? Number(formValues.surface) : null,
+        bedrooms: formValues.bedrooms ? Number(formValues.bedrooms) : null,
+        listing_kind: formValues.listingKind ?? null,
+        billing_unit:
+          formValues.billingUnit ??
+          defaultBillingUnitByType[formValues.serviceType ?? 'home_service'],
+        image_url: formValues.imageUrl ?? null,
+        is_featured: false,
+        rating: 0,
+        reviews_count: 0,
+        features: [],
+        ownerId: currentUser.id ?? currentUser.email,
+        ownerName: currentUser.name,
+        createdAt: new Date().toISOString(),
+        status: 'pending',
+      }
+      setUserListings((current) => [listing, ...current])
+      return listing
     }
-    setUserListings((current) => [listing, ...current])
-    return listing
+
+    const response = await apiRequest('/api/services', {
+      method: 'POST',
+      token,
+      body: {
+        service_type: formValues.serviceType ?? 'home_service',
+        category: formValues.category ?? '',
+        title: formValues.title ?? '',
+        description: formValues.description ?? '',
+        location_city: formValues.locationCity ?? currentUser.city ?? 'Maroc',
+        location_address: formValues.locationAddress ?? '',
+        latitude: formValues.latitude ? Number(formValues.latitude) : null,
+        longitude: formValues.longitude ? Number(formValues.longitude) : null,
+        phone: formValues.phone ?? currentUser.phone ?? '',
+        price: Number(formValues.price ?? 0),
+        surface: formValues.surface ? Number(formValues.surface) : null,
+        bedrooms: formValues.bedrooms ? Number(formValues.bedrooms) : null,
+        listing_kind: formValues.listingKind ?? null,
+        billing_unit:
+          formValues.billingUnit ??
+          defaultBillingUnitByType[formValues.serviceType ?? 'home_service'],
+        image_url: formValues.imageUrl ?? null,
+      },
+    })
+
+    setManagedServices((current) => [response.data, ...current.filter((listing) => listing.id !== response.data.id)])
+
+    return response
   }
 
-  function updateUserListing(id, patch) {
-    if (!currentUser) return
-    setUserListings((current) =>
-      current.map((listing) =>
-        listing.id === id &&
-        listing.ownerId === (currentUser.id ?? currentUser.email)
-          ? { ...listing, ...patch, price: Number(patch.price ?? listing.price) }
-          : listing,
-      ),
+  async function updateUserListing(id, patch) {
+    if (!currentUser) return null
+
+    if (demoMode || !token) {
+      setUserListings((current) =>
+        current.map((listing) =>
+          listing.id === id &&
+          listing.ownerId === (currentUser.id ?? currentUser.email)
+            ? { ...listing, ...patch, price: Number(patch.price ?? listing.price), status: 'pending' }
+            : listing,
+        ),
+      )
+      return true
+    }
+
+    const response = await apiRequest(`/api/services/${id}`, {
+      method: 'PATCH',
+      token,
+      body: {
+        ...patch,
+        price: patch.price !== undefined ? Number(patch.price) : undefined,
+      },
+    })
+
+    setManagedServices((current) =>
+      current.map((listing) => (listing.id === id ? response.data : listing)),
     )
+
+    return response
   }
 
-  function deleteUserListing(id) {
-    if (!currentUser) return
-    setUserListings((current) =>
-      current.filter(
-        (listing) =>
-          !(
-            listing.id === id &&
-            listing.ownerId === (currentUser.id ?? currentUser.email)
-          ),
-      ),
-    )
+  async function deleteUserListing(id) {
+    if (!currentUser) return false
+
+    if (demoMode || !token) {
+      setUserListings((current) =>
+        current.filter(
+          (listing) =>
+            !(
+              listing.id === id &&
+              listing.ownerId === (currentUser.id ?? currentUser.email)
+            ),
+        ),
+      )
+      return true
+    }
+
+    await apiRequest(`/api/services/${id}`, {
+      method: 'DELETE',
+      token,
+    })
+
+    setManagedServices((current) => current.filter((listing) => listing.id !== id))
+    return true
+  }
+
+  async function markNotificationsAsRead() {
+    if (!token || !currentUser || demoMode || notificationsUnreadCount === 0) {
+      return
+    }
+
+    try {
+      await apiRequest('/api/notifications/read-all', {
+        method: 'PUT',
+        token,
+      })
+
+      setNotifications((current) =>
+        current.map((item) => ({
+          ...item,
+          read_at: item.read_at ?? new Date().toISOString(),
+        })),
+      )
+      setNotificationsUnreadCount(0)
+    } catch {
+      // Ignore: the dropdown can still render old notifications.
+    }
   }
 
   const myListings = currentUser
-    ? userListings.filter(
-        (listing) =>
-          listing.ownerId === (currentUser.id ?? currentUser.email),
-      )
+    ? demoMode
+      ? userListings.filter(
+          (listing) =>
+            listing.ownerId === (currentUser.id ?? currentUser.email),
+        )
+      : managedServices
     : []
 
   const value = {
@@ -813,6 +968,10 @@ export function MarketplaceProvider({ children }) {
     managedBookings,
     managementLoading,
     getServicesByType,
+    notifications,
+    notificationsLoading,
+    notificationsUnreadCount,
+    markNotificationsAsRead,
     // Commentaires
     getCommentsForService,
     addComment,

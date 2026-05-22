@@ -60,8 +60,17 @@ function ImmoListingCard({ listing, isFavorite, onToggleFavorite, currentUser, g
   const imageFallback = `https://picsum.photos/seed/${listing.id ?? listing.title}/400/300`
   const imgSrc = listing.image_url || imageFallback
 
+  function openListing() {
+    if (listing.source_url) {
+      window.open(listing.source_url, '_blank', 'noopener,noreferrer')
+      return
+    }
+
+    navigate(`/listing/${listing.id}`)
+  }
+
   return (
-    <article className="svc-card">
+    <article className="svc-card cursor-pointer" onClick={openListing}>
       {/* Image */}
       <div className="svc-card-img-wrap">
         <img
@@ -75,7 +84,14 @@ function ImmoListingCard({ listing, isFavorite, onToggleFavorite, currentUser, g
         <button
           type="button"
           className={`svc-fav-btn${isFavorite ? ' active' : ''}`}
-          onClick={() => currentUser ? onToggleFavorite(listing.id) : navigate('/login')}
+          onClick={(event) => {
+            event.stopPropagation()
+            if (currentUser) {
+              onToggleFavorite(listing.id)
+            } else {
+              navigate('/login')
+            }
+          }}
           aria-label="Favoris"
         >
           <Heart size={16} fill={isFavorite ? 'currentColor' : 'none'} strokeWidth={2} />
@@ -107,9 +123,12 @@ function ImmoListingCard({ listing, isFavorite, onToggleFavorite, currentUser, g
           <button
             type="button"
             className="svc-details-btn"
-            onClick={() => {}}
+            onClick={(event) => {
+              event.stopPropagation()
+              openListing()
+            }}
           >
-            Détails
+            {listing.source_url ? 'Voir sur le site' : 'Détails'}
           </button>
         </div>
 
@@ -118,7 +137,10 @@ function ImmoListingCard({ listing, isFavorite, onToggleFavorite, currentUser, g
           href={currentUser ? wa : '#'}
           target={currentUser ? '_blank' : '_self'}
           rel="noreferrer"
-          onClick={handleWA}
+          onClick={(event) => {
+            event.stopPropagation()
+            handleWA(event)
+          }}
           style={{ background: '#0b162c' }}
         >
           <Phone size={16} /> Contacter l'annonceur
@@ -219,6 +241,73 @@ export default function ImmobilierPage() {
           </button>
         </div>
       </div>
+
+      {/* ── Search Bar for "Autre" ── */}
+      {activeCat === 'autre' && (
+        <div style={{ width: '100%', backgroundColor: '#f3f4f6', paddingTop: '24px', paddingBottom: '24px', paddingLeft: '16px', paddingRight: '16px', marginBottom: '20px' }}>
+          <div style={{ maxWidth: '1280px', marginLeft: 'auto', marginRight: 'auto' }}>
+            <div style={{ position: 'relative', width: '100%' }}>
+              
+              {/* Search Icon */}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', color: '#9ca3af' }}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+
+              {/* Input */}
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Rechercher un service spécifique..."
+                style={{
+                  width: '100%',
+                  height: '64px',
+                  paddingLeft: '56px',
+                  paddingRight: '50px',
+                  borderRadius: '16px',
+                  backgroundColor: '#ffffff',
+                  border: '1px solid #e5e7eb',
+                  color: '#374151',
+                  fontSize: '15px',
+                  boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+                  outline: 'none',
+                  transition: 'all 0.3s ease',
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#fb923c';
+                  e.target.style.boxShadow = '0 0 0 4px #ffedd5';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = '#e5e7eb';
+                  e.target.style.boxShadow = '0 1px 2px 0 rgba(0, 0, 0, 0.05)';
+                }}
+              />
+              
+              {/* Clear Button */}
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch('')}
+                  style={{ position: 'absolute', right: '20px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af' }}
+                >
+                  <X size={20} />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Advanced Filters Panel ── */}
       {filtersOpen && (
@@ -327,7 +416,6 @@ export default function ImmobilierPage() {
           Voir les sites utiles
         </button>
       </section>
-
     </div>
   )
 }

@@ -28,6 +28,7 @@ class AuthController extends Controller
             'email' => Str::lower($validated['email']),
             'password' => $validated['password'],
             'role' => $validated['role'] ?? 'client',
+            'status' => 'actif',
             'phone' => $validated['phone'] ?? null,
             'city' => $validated['city'] ?? null,
         ]);
@@ -51,6 +52,12 @@ class AuthController extends Controller
             return response()->json([
                 'message' => 'Email ou mot de passe incorrect.',
             ], 422);
+        }
+
+        if ($user->status === 'bloque') {
+            return response()->json([
+                'message' => 'Votre compte a ete bloque par un administrateur.',
+            ], 403);
         }
 
         return response()->json([
@@ -103,6 +110,7 @@ class AuthController extends Controller
             'name' => $user->name,
             'email' => $user->email,
             'role' => $user->role,
+            'status' => $user->status,
             'phone' => $user->phone,
             'city' => $user->city,
             'address' => $user->address,

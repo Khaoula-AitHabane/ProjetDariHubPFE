@@ -16,10 +16,12 @@ class Service extends Model
         'description',
         'location_city',
         'location_address',
+        'phone',
         'price',
         'billing_unit',
         'capacity',
         'surface',
+        'bedrooms',
         'furnished',
         'condition',
         'listing_kind',
@@ -35,6 +37,13 @@ class Service extends Model
         'source_url',
         'available_from',
         'available_to',
+        // AI Moderation
+        'ai_risk_score',
+        'ai_risk_level',
+        'ai_is_suspicious',
+        'ai_reasons',
+        'ai_recommendation',
+        'ai_checked',
     ];
 
     protected function casts(): array
@@ -44,11 +53,17 @@ class Service extends Model
             'rating' => 'decimal:1',
             'is_featured' => 'boolean',
             'furnished' => 'boolean',
+            'bedrooms' => 'integer',
             'latitude' => 'decimal:7',
             'longitude' => 'decimal:7',
             'features' => 'array',
             'available_from' => 'date',
             'available_to' => 'date',
+            // AI Moderation
+            'ai_risk_score' => 'integer',
+            'ai_is_suspicious' => 'boolean',
+            'ai_reasons' => 'array',
+            'ai_checked' => 'boolean',
         ];
     }
 
@@ -60,5 +75,10 @@ class Service extends Model
     public function bookings(): HasMany
     {
         return $this->hasMany(Booking::class);
+    }
+
+    public function reports(): HasMany
+    {
+        return $this->hasMany(Report::class);
     }
 }

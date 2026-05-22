@@ -24,6 +24,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'status',
         'phone',
         'city',
         'address',
@@ -66,5 +67,20 @@ class User extends Authenticatable
     public function apiTokens(): HasMany
     {
         return $this->hasMany(ApiToken::class);
+    }
+
+    public function reports(): HasMany
+    {
+        return $this->hasMany(Report::class, 'reporter_id');
+    }
+
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(UserNotification::class);
+    }
+
+    public function aiGenerationLogs(): HasMany
+    {
+        return $this->hasMany(AiGenerationLog::class);
     }
 }

@@ -1,14 +1,5 @@
-import { GoogleMap, Marker, useJsApiLoader } from '@react-google-maps/api'
 import { useMemo } from 'react'
 import { MapPin } from 'lucide-react'
-
-const GOOGLE_MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY ?? ''
-
-const MAP_CONTAINER_STYLE = {
-  width: '100%',
-  height: '220px',
-  borderRadius: '8px',
-}
 
 const MOROCCO_CENTER = { lat: 33.5731, lng: -7.5898 }
 
@@ -34,10 +25,18 @@ const CITY_COORDS = {
   'Settat': { lat: 33.0019, lng: -7.6189 },
   'Khouribga': { lat: 32.8811, lng: -6.9063 },
   'Mohammedia': { lat: 33.6861, lng: -7.3836 },
+  'Laayoune': { lat: 27.1536, lng: -13.2033 },
+  'Laâyoune': { lat: 27.1536, lng: -13.2033 },
 }
 
 function getCoordsForService(service) {
   if (!service) return null
+
+  // Support local coordinates if available from DB
+  if (service.latitude && service.longitude) {
+    return { lat: Number(service.latitude), lng: Number(service.longitude) }
+  }
+
   const city = service.location_city ?? ''
   const match = Object.keys(CITY_COORDS).find(
     (k) => city.toLowerCase().includes(k.toLowerCase()) || k.toLowerCase().includes(city.toLowerCase())
@@ -46,61 +45,33 @@ function getCoordsForService(service) {
 }
 
 export default function ServiceMap({ service }) {
-  const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: GOOGLE_MAPS_KEY,
-  })
-
   const center = useMemo(() => getCoordsForService(service) ?? MOROCCO_CENTER, [service])
 
-  if (!GOOGLE_MAPS_KEY) {
-    return (
-      <div className="map-placeholder">
-        <MapPin size={24} style={{marginBottom:'8px'}} />
-        <p>{service?.location_address || service?.location_city || 'Localisation non disponible'}</p>
-        <small>Clé Google Maps non configurée — ajoutez VITE_GOOGLE_MAPS_KEY dans .env</small>
-      </div>
-    )
-  }
+  // Calculate bounding box for the OpenStreetMap iframe embed
+  const delta = 0.01 // Approximate zoom level
+  const bbox = useMemo(() => {
+    return `${center.lng - delta}%2C${center.lat - delta}%2C${center.lng + delta}%2C${center.lat + delta}`
+  }, [center])
 
-  if (loadError) {
-    return (
-      <div className="map-placeholder">
-        <MapPin size={24} style={{marginBottom:'8px'}} />
-        <p>{service?.location_city}</p>
-        <small>Impossible de charger la carte</small>
-      </div>
-    )
-  }
-
-  if (!isLoaded) {
-    return <div className="map-loading">Chargement de la carte…</div>
-  }
+  // OpenStreetMap embed URL with marker at coordinates
+  const embedUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${center.lat}%2C${center.lng}`
 
   return (
-    <div className="service-map-wrapper">
-      <GoogleMap
-        mapContainerStyle={MAP_CONTAINER_STYLE}
-        center={center}
-        zoom={13}
-        options={{
-          disableDefaultUI: false,
-          zoomControl: true,
-          mapTypeControl: false,
-          streetViewControl: false,
-          fullscreenControl: true,
-          styles: [
-            { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
-          ],
-        }}
-      >
-        <Marker
-          position={center}
-          title={service?.title ?? 'Annonce'}
-        />
-      </GoogleMap>
+    <div className="service-map-wrapper w-full mt-4">
+      <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm">
+        <iframe
+          title="OpenStreetMap Location"
+          width="100%"
+          height="220"
+          style={{ border: 0, display: 'block' }}
+          src={embedUrl}
+          allowFullScreen
+        ></iframe>
+      </div>
       {service?.location_address && (
-        <p className="map-address" style={{display:'flex', alignItems:'center', gap:'4px'}}>
-          <MapPin size={14} /> {service.location_address}
+        <p className="map-address mt-2 text-sm text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
+          <MapPin size={14} className="text-slate-400 dark:text-slate-500" />
+          {service.location_address}
         </p>
       )}
     </div>

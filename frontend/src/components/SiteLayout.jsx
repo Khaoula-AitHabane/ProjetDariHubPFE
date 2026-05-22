@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { Home, Armchair, Wrench, Heart, Settings, Sun, Moon, ClipboardList, LogOut, Mail, Globe, MapPin, Phone, User, Building } from 'lucide-react'
+import { Home, Armchair, Wrench, Heart, Settings, Sun, Moon, ClipboardList, LogOut, Mail, Globe, MapPin, Phone, User, Building, Menu, X, Bell } from 'lucide-react'
 import { useMarketplace } from '../context/MarketplaceContext'
 import { roleLabels } from '../lib/marketplace'
 
@@ -9,10 +9,21 @@ function navClass({ isActive }) {
 }
 
 export default function SiteLayout() {
-  const { currentUser, logout, darkMode, toggleDarkMode } = useMarketplace()
+  const {
+    currentUser,
+    logout,
+    darkMode,
+    toggleDarkMode,
+    notifications,
+    notificationsLoading,
+    notificationsUnreadCount,
+    markNotificationsAsRead,
+  } = useMarketplace()
   const navigate = useNavigate()
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
 
   const isHomePage = location.pathname === '/'
@@ -28,19 +39,34 @@ export default function SiteLayout() {
   const initials = currentUser?.name
     ? currentUser.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
     : ''
+  const isAdmin = currentUser?.role === 'admin'
 
   const headerClass = `site-header ${isHomePage && !scrolled ? 'transparent-home' : ''}`
+
+  async function handleNotificationsToggle() {
+    const nextOpen = !notificationsOpen
+    setNotificationsOpen(nextOpen)
+    setMenuOpen(false)
+
+    if (nextOpen && notificationsUnreadCount > 0) {
+      await markNotificationsAsRead()
+    }
+  }
 
   return (
     <div className="app-shell">
       <header className={headerClass}>
         <div className="topbar">
           <NavLink to="/" className="nav-brand">
-            <span className="nav-brand-dari">Dari</span>
-            <span className="nav-brand-hub">Hub</span>
+            <div className="brand-text-wrapper">
+              <div className="brand-title">
+                <span className="brand-dari">Dari</span><span className="brand-hub">Hub</span>
+              </div>
+              <div className="brand-subtitle">Plateforme d'Annonces</div>
+            </div>
           </NavLink>
 
-          <nav className="top-nav">
+          <nav className="top-nav hidden md:flex items-center">
             <NavLink to="/" className={navClass}>
               <Home size={18} /> Home
             </NavLink>
@@ -56,21 +82,21 @@ export default function SiteLayout() {
             <NavLink to="/sites-utiles" className={navClass}>
               <Globe size={18} /> Partenaires
             </NavLink>
-            {currentUser && (
+            {currentUser && !isAdmin && (
               <>
                 <NavLink to="/mes-annonces" className={navClass}>
                   <ClipboardList size={18} /> Mes Annonces
                 </NavLink>
-                {currentUser.role === 'admin' && (
-                  <NavLink to="/admin" className={navClass}>
-                    <span className="admin-badge-link" style={{display:'flex', alignItems:'center', gap:'4px'}}><Settings size={14} /> Admin</span>
-                  </NavLink>
-                )}
               </>
+            )}
+            {isAdmin && (
+              <NavLink to="/admin" className={navClass}>
+                <span className="admin-badge-link" style={{display:'flex', alignItems:'center', gap:'4px'}}><Settings size={14} /> Admin</span>
+              </NavLink>
             )}
           </nav>
 
-          <div className="top-actions">
+          <div className="top-actions hidden md:flex items-center">
             {!currentUser ? (
               <>
                 <NavLink to="/register" className="btn-register">
@@ -82,10 +108,53 @@ export default function SiteLayout() {
               </>
             ) : (
               <div className="user-menu-wrapper">
+                {!isAdmin ? (
+                  <div className="notifications-wrapper">
+                    <button
+                      type="button"
+                      className="notifications-btn"
+                      onClick={handleNotificationsToggle}
+                      aria-expanded={notificationsOpen}
+                    >
+                      <Bell size={18} />
+                      {notificationsUnreadCount > 0 ? (
+                        <span className="notifications-badge">{notificationsUnreadCount}</span>
+                      ) : null}
+                    </button>
+
+                    {notificationsOpen ? (
+                      <div className="notifications-dropdown">
+                        <div className="notifications-header">
+                          <strong>Notifications</strong>
+                          <span>{notificationsUnreadCount > 0 ? `${notificationsUnreadCount} nouvelle(s)` : 'Tout est lu'}</span>
+                        </div>
+
+                        {notificationsLoading ? (
+                          <div className="notifications-empty">Chargement...</div>
+                        ) : notifications.length > 0 ? (
+                          <div className="notifications-list">
+                            {notifications.map((item) => (
+                              <div key={item.id} className={`notification-item${item.read_at ? '' : ' unread'}`}>
+                                <p className="notification-title">{item.title}</p>
+                                <p className="notification-message">{item.message}</p>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="notifications-empty">Aucune notification pour le moment.</div>
+                        )}
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+
                 <button
                   type="button"
                   className="user-avatar-btn"
-                  onClick={() => setMenuOpen((o) => !o)}
+                  onClick={() => {
+                    setNotificationsOpen(false)
+                    setMenuOpen((o) => !o)
+                  }}
                   aria-expanded={menuOpen}
                 >
                   <span className="user-avatar">{initials}</span>
@@ -101,13 +170,15 @@ export default function SiteLayout() {
                       <strong>{currentUser.name}</strong>
                       <span>{roleLabels[currentUser.role] ?? currentUser.role}</span>
                     </div>
-                    <NavLink to="/mes-annonces" className="dropdown-item">
-                      <ClipboardList size={16} /> Mes annonces
-                    </NavLink>
+                    {!isAdmin && (
+                      <NavLink to="/mes-annonces" className="dropdown-item">
+                        <ClipboardList size={16} /> Mes annonces
+                      </NavLink>
+                    )}
                     <NavLink to="/favoris" className="dropdown-item">
                       <Heart size={16} /> Favoris
                     </NavLink>
-                    {currentUser.role === 'admin' && (
+                    {isAdmin && (
                       <NavLink to="/admin" className="dropdown-item">
                         <Settings size={16} /> Dashboard Admin
                       </NavLink>
@@ -124,7 +195,92 @@ export default function SiteLayout() {
               </div>
             )}
           </div>
+          
+          <button 
+            className="mobile-menu-toggle md:hidden ml-auto"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            {mobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
+          </button>
         </div>
+
+        {/* Mobile Menu Dropdown */}
+        {mobileMenuOpen && (
+          <div className="mobile-nav-panel md:hidden">
+            <nav className="mobile-nav-links">
+              <NavLink to="/" className={navClass} onClick={() => setMobileMenuOpen(false)}>
+                <Home size={18} /> Home
+              </NavLink>
+              <NavLink to="/immobilier" className={navClass} onClick={() => setMobileMenuOpen(false)}>
+                <Building size={18} /> Immobilier
+              </NavLink>
+              <NavLink to="/meubles" className={navClass} onClick={() => setMobileMenuOpen(false)}>
+                <Armchair size={18} /> Meubles
+              </NavLink>
+              <NavLink to="/services-maison" className={navClass} onClick={() => setMobileMenuOpen(false)}>
+                <Wrench size={18} /> Services Maison
+              </NavLink>
+              <NavLink to="/sites-utiles" className={navClass} onClick={() => setMobileMenuOpen(false)}>
+                <Globe size={18} /> Partenaires
+              </NavLink>
+              {currentUser && !isAdmin && (
+                <>
+                  <NavLink to="/mes-annonces" className={navClass} onClick={() => setMobileMenuOpen(false)}>
+                    <ClipboardList size={18} /> Mes Annonces
+                  </NavLink>
+                </>
+              )}
+              {isAdmin && (
+                <NavLink to="/admin" className={navClass} onClick={() => setMobileMenuOpen(false)}>
+                  <span className="admin-badge-link flex items-center gap-1"><Settings size={14} /> Admin</span>
+                </NavLink>
+              )}
+            </nav>
+
+            <div className="mobile-nav-actions">
+              {!currentUser ? (
+                <>
+                  <NavLink to="/register" className="btn-register justify-center w-full text-center" onClick={() => setMobileMenuOpen(false)}>
+                    Register
+                  </NavLink>
+                  <NavLink to="/login" className="btn-connect justify-center w-full text-center" onClick={() => setMobileMenuOpen(false)}>
+                    Se connecter
+                  </NavLink>
+                </>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="user-avatar">{initials}</span>
+                    <div>
+                      <strong className="block text-slate-800">{currentUser.name}</strong>
+                      <span className="text-sm text-slate-500 capitalize">{roleLabels[currentUser.role] ?? currentUser.role}</span>
+                    </div>
+                  </div>
+                  {!isAdmin && (
+                    <NavLink to="/mes-annonces" className="dropdown-item" onClick={() => setMobileMenuOpen(false)}>
+                      <ClipboardList size={16} /> Mes annonces
+                    </NavLink>
+                  )}
+                  <NavLink to="/favoris" className="dropdown-item" onClick={() => setMobileMenuOpen(false)}>
+                    <Heart size={16} /> Favoris
+                  </NavLink>
+                  {isAdmin && (
+                    <NavLink to="/admin" className="dropdown-item" onClick={() => setMobileMenuOpen(false)}>
+                      <Settings size={16} /> Dashboard Admin
+                    </NavLink>
+                  )}
+                  <button
+                    type="button"
+                    className="dropdown-item dropdown-logout text-left"
+                    onClick={() => { logout(); setMobileMenuOpen(false); }}
+                  >
+                    <LogOut size={16} /> Déconnexion
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </header>
 
       <main className="page-shell">

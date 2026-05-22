@@ -1,5 +1,24 @@
 import { Home, Armchair, Wrench } from 'lucide-react'
-export const API_BASE_URL = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '')
+
+function resolveApiBaseUrl() {
+  const configuredBaseUrl = String(import.meta.env.VITE_API_URL ?? '').trim().replace(/\/$/, '')
+
+  if (configuredBaseUrl) {
+    return configuredBaseUrl
+  }
+
+  if (typeof window !== 'undefined') {
+    const { hostname, protocol } = window.location
+
+    if (hostname === '127.0.0.1' || hostname === 'localhost') {
+      return `${protocol}//127.0.0.1:8000`
+    }
+  }
+
+  return ''
+}
+
+export const API_BASE_URL = resolveApiBaseUrl()
 export const AUTH_STORAGE_KEY = 'khadamat-dar-auth'
 export const FAVORITES_STORAGE_KEY = 'khadamat-dar-favorites'
 export const COMMENTS_STORAGE_KEY = 'darsouk-comments'
@@ -57,7 +76,7 @@ export const defaultBillingUnitByType = {
 }
 
 export function getApiUrl(path) {
-  return `${API_BASE_URL}${path}`
+  return API_BASE_URL ? `${API_BASE_URL}${path}` : path
 }
 
 export function formatPrice(price) {
@@ -207,11 +226,72 @@ export function readStoredUserListings() {
   }
 }
 
+function slimListingImagesForStorage(listing) {
+  if (!listing || typeof listing !== 'object') {
+    return listing
+  }
+
+  const imageValue = listing.image_url
+
+  if (!imageValue || typeof imageValue !== 'string') {
+    return listing
+  }
+
+  if (imageValue.startsWith('data:')) {
+    return { ...listing, image_url: null }
+  }
+
+  try {
+    const parsed = JSON.parse(imageValue)
+
+    if (Array.isArray(parsed)) {
+      const lightweightImages = parsed.filter(
+        (value) => typeof value === 'string' && !value.startsWith('data:'),
+      )
+
+      return {
+        ...listing,
+        image_url:
+          lightweightImages.length > 0 ? JSON.stringify(lightweightImages.slice(0, 3)) : null,
+      }
+    }
+  } catch {
+    // Keep non-JSON URLs as-is.
+  }
+
+  return listing
+}
+
 export function saveStoredUserListings(listings) {
-  window.localStorage.setItem(
-    USER_LISTINGS_STORAGE_KEY,
-    JSON.stringify(listings),
-  )
+  try {
+    window.localStorage.setItem(
+      USER_LISTINGS_STORAGE_KEY,
+      JSON.stringify(listings),
+    )
+    return true
+  } catch (error) {
+    if (error?.name !== 'QuotaExceededError') {
+      return false
+    }
+
+    try {
+      const lightweightListings = Array.isArray(listings)
+        ? listings.map(slimListingImagesForStorage)
+        : []
+
+      window.localStorage.setItem(
+        USER_LISTINGS_STORAGE_KEY,
+        JSON.stringify(lightweightListings),
+      )
+      return true
+    } catch {
+      try {
+        window.localStorage.removeItem(USER_LISTINGS_STORAGE_KEY)
+      } catch {}
+
+      return false
+    }
+  }
 }
 
 export function normalizeWhatsAppPhone(phone) {
@@ -233,7 +313,7 @@ export function normalizeWhatsAppPhone(phone) {
 }
 
 export function getWhatsAppLink(service) {
-  const phone = normalizeWhatsAppPhone(service?.provider?.phone)
+  const phone = normalizeWhatsAppPhone(service?.phone || service?.provider?.phone)
   const text = encodeURIComponent(
     `Salam, bghit ma3lomat 3la service: ${service?.title ?? 'Khadamat Dar'}`,
   )

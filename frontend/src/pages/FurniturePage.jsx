@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Heart, MapPin, Star, Search, SlidersHorizontal, X, Phone, Shield, Sparkles, ThumbsUp, Lock, Armchair } from 'lucide-react'
+import PublicAnnonceDetailsModal from '../components/PublicAnnonceDetailsModal'
 import { useMarketplace } from '../context/MarketplaceContext'
 import { formatPrice } from '../lib/marketplace'
 
@@ -44,7 +45,7 @@ function StarRating({ rating = 0, count = 0 }) {
 }
 
 /* ─────────── Furniture Card ─────────── */
-function FurnitureListingCard({ furniture, isFavorite, onToggleFavorite, currentUser, getWhatsAppLink }) {
+function FurnitureListingCard({ furniture, isFavorite, onToggleFavorite, currentUser, getWhatsAppLink, onOpenDetails }) {
   const navigate = useNavigate()
   const rating = Number(furniture.rating ?? 4.0).toFixed(1)
   const reviewsCount = furniture.reviews_count ?? Math.floor(Math.random() * 40 + 5)
@@ -100,9 +101,15 @@ function FurnitureListingCard({ furniture, isFavorite, onToggleFavorite, current
           <button
             type="button"
             className="svc-details-btn"
-            onClick={() => {}}
+            onClick={() => {
+              if (furniture.source_url) {
+                window.open(furniture.source_url, '_blank', 'noopener,noreferrer')
+              } else {
+                onOpenDetails(furniture)
+              }
+            }}
           >
-            Détails
+            {furniture.source_url ? 'Voir sur le site' : 'Détails'}
           </button>
         </div>
 
@@ -141,6 +148,7 @@ export default function FurniturePage() {
   const [activeCat, setActiveCat] = useState('all')
   const [condition, setCondition] = useState('all')
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [selectedFurniture, setSelectedFurniture] = useState(null)
 
   // Filter only furniture_rental listings
   const furnitureItems = useMemo(() => {
@@ -212,6 +220,73 @@ export default function FurniturePage() {
           </button>
         </div>
       </div>
+
+      {/* ── Search Bar for "Autre" ── */}
+      {activeCat === 'autre' && (
+        <div style={{ width: '100%', backgroundColor: '#f3f4f6', paddingTop: '24px', paddingBottom: '24px', paddingLeft: '16px', paddingRight: '16px', marginBottom: '20px' }}>
+          <div style={{ maxWidth: '1280px', marginLeft: 'auto', marginRight: 'auto' }}>
+            <div style={{ position: 'relative', width: '100%' }}>
+              
+              {/* Search Icon */}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', width: '20px', height: '20px', color: '#9ca3af' }}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+
+              {/* Input */}
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Rechercher un meuble spécifique..."
+                style={{
+                  width: '100%',
+                  height: '64px',
+                  paddingLeft: '56px',
+                  paddingRight: '50px',
+                  borderRadius: '16px',
+                  backgroundColor: '#ffffff',
+                  border: '1px solid #e5e7eb',
+                  color: '#374151',
+                  fontSize: '15px',
+                  boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+                  outline: 'none',
+                  transition: 'all 0.3s ease',
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#fb923c';
+                  e.target.style.boxShadow = '0 0 0 4px #ffedd5';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = '#e5e7eb';
+                  e.target.style.boxShadow = '0 1px 2px 0 rgba(0, 0, 0, 0.05)';
+                }}
+              />
+              
+              {/* Clear Button */}
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch('')}
+                  style={{ position: 'absolute', right: '20px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af' }}
+                >
+                  <X size={20} />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Advanced Filters Panel ── */}
       {filtersOpen && (
@@ -288,6 +363,7 @@ export default function FurniturePage() {
                 onToggleFavorite={toggleFavorite}
                 currentUser={currentUser}
                 getWhatsAppLink={getWhatsAppLink}
+                onOpenDetails={setSelectedFurniture}
               />
             ))}
           </div>
@@ -330,6 +406,11 @@ export default function FurniturePage() {
           Voir les sites utiles
         </button>
       </section>
+
+      <PublicAnnonceDetailsModal
+        service={selectedFurniture}
+        onClose={() => setSelectedFurniture(null)}
+      />
 
     </div>
   )

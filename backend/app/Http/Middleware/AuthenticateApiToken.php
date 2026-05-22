@@ -33,6 +33,14 @@ class AuthenticateApiToken
             return $this->unauthorizedResponse('Session expiree. Merci de vous reconnecter.');
         }
 
+        if ($apiToken->user->status === 'bloque') {
+            $apiToken->delete();
+
+            return response()->json([
+                'message' => 'Votre compte a ete bloque par un administrateur.',
+            ], 403);
+        }
+
         $apiToken->forceFill([
             'last_used_at' => now(),
         ])->save();

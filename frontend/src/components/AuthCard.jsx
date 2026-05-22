@@ -16,7 +16,8 @@ export default function AuthCard({ mode }) {
   const [form, setForm] = useState(createEmptyAuthForm())
 
   if (currentUser) {
-    return <Navigate to="/" replace />
+    const target = currentUser.role === 'admin' ? '/admin' : '/'
+    return <Navigate to={target} replace />
   }
 
   const isRegister = mode === 'register'
@@ -33,15 +34,19 @@ export default function AuthCard({ mode }) {
   async function handleSubmit(event) {
     event.preventDefault()
 
-    const success = isRegister
+    const res = isRegister
       ? await register(form)
       : await login({
           email: form.email,
           password: form.password,
         })
 
-    if (success) {
-      navigate('/')
+    if (res && res.data) {
+      if (res.data.role === 'admin') {
+        navigate('/admin')
+      } else {
+        navigate('/')
+      }
     }
   }
 
@@ -85,13 +90,13 @@ export default function AuthCard({ mode }) {
                   <input required name="name" value={form.name} onChange={handleChange} />
                 </label>
 
-                <div className="two-columns">
-                  <label>
+                <div className="flex flex-col md:flex-row gap-4 w-full">
+                  <label className="flex-1">
                     <span>Telephone</span>
                     <input name="phone" value={form.phone} onChange={handleChange} />
                   </label>
 
-                  <label>
+                  <label className="flex-1">
                     <span>Ville</span>
                     <input name="city" value={form.city} onChange={handleChange} />
                   </label>
